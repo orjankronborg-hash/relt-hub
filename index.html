@@ -200,9 +200,10 @@ function enterHub() {
   });
 
   document.title = 'RELT — Management Hub';
+  const injected = decryptedHtml.replace('<head>', '<head><script>window.RELT_USER="' + name + '";<\/script>');
   document.documentElement.innerHTML = '<head><style>*{margin:0;padding:0}html,body{height:100%;overflow:hidden}</style></head><body><iframe id="hub" style="position:fixed;top:0;left:0;width:100%;height:100%;border:none;"></iframe></body>';
   const iframe = document.getElementById('hub');
-  iframe.srcdoc = decryptedHtml;
+  iframe.srcdoc = injected;
 }
 </script>
 
