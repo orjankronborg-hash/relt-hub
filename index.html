@@ -122,7 +122,7 @@ body {
   <div id="step2" class="hidden">
     <select id="nameSelect">
       <option value="" disabled selected>Select your name...</option>
-      <option value="Kjersti">Kjersti Høklingen — EVP Real Estate</option>
+      <option value="Kjersti">Kjersti Høklingen</option>
       <option value="Laila">Laila Dahlen</option>
       <option value="Tiina">Tiina Aalto-Fischer</option>
       <option value="Mathilda">Mathilda Hayes</option>
@@ -132,14 +132,14 @@ body {
       <option value="Anne">Anne Ormstad</option>
       <option value="Christine">Christine Gelfgren</option>
       <option value="Karl">Karl Stenstadvold</option>
-      <option value="Ørjan">Ørjan Kronborg — Strategy Director</option>
+      <option value="Ørjan">Ørjan Kronborg</option>
     </select>
     <button onclick="enterHub()" id="enter-btn" disabled>Continue</button>
   </div>
 </div>
 
 <script>
-const DOC_ID = 'relt-hub';
+const DOC_ID = 'relt-hub-v2';
 let decryptedHtml = null;
 
 document.getElementById('nameSelect').addEventListener('change', function() {
@@ -157,7 +157,7 @@ async function checkPassword() {
   err.textContent = '';
 
   try {
-    const r = await fetch('d.json');
+    const r = await fetch('d.json?v=' + Date.now());
     if (!r.ok) throw new Error('Could not load content file.');
     const D = await r.json();
 
