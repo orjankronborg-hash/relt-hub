@@ -329,6 +329,19 @@ main.hidden { display: none; }
 .sidebar-toggle:hover { background: #5D1818; }
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
 
+/* Responsive: laptops without external monitor */
+@media (max-width: 1280px) {
+  .topics-table th { font-size: 12px; padding: 7px 8px; }
+  .topics-table td { padding: 6px 8px; }
+  .ii { font-size: 14px; }
+  .session-notes { font-size: 13px; }
+  .format-badge { font-size: 12px; padding: 2px 10px; }
+  select.type-sel { font-size: 13px; }
+  .time-in { width: 44px; font-size: 13px; }
+  .pr-link { max-width: 160px; font-size: 13px; }
+  .session-actions .btn { font-size: 12px; padding: 4px 10px; }
+}
+
 /* Responsive: tablets and small laptops */
 @media (max-width: 1024px) {
   .sidebar { transform: translateX(-100%); }
@@ -337,6 +350,105 @@ main.hidden { display: none; }
   .sidebar-overlay.open { display: block; }
   .main-wrapper { margin-left: 0; }
   .top-bar { padding-left: 56px; }
+}
+
+/* Responsive: tablets */
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+  .content-area { padding: 12px 10px; }
+  .top-bar .search-wrap { max-width: 200px; flex: 0 1 200px; }
+  .session-date { min-width: 100px; font-size: 15px; }
+  .session-time { min-width: 90px; font-size: 13px; }
+  .session-notes { font-size: 13px; }
+  .session-actions { gap: 4px; }
+  .session-actions .btn { font-size: 11px; padding: 3px 7px; }
+  .topics-table th { font-size: 12px; padding: 6px 6px; }
+  .topics-table td { padding: 5px 6px; }
+  /* Hide Presenter and Pre-read columns (3rd and 6th data columns) */
+  .topics-table th:nth-child(4),
+  .topics-table td:nth-child(4),
+  .topics-table th:nth-child(7),
+  .topics-table td:nth-child(7) { display: none; }
+  .ii { font-size: 13px; }
+  .format-badge { font-size: 11px; padding: 2px 8px; }
+  .type-badge, select.type-sel { font-size: 12px; }
+  .time-in { width: 42px; font-size: 12px; }
+  .dur { font-size: 10px; }
+  .detail-panel { padding: 12px 14px; }
+  .ea { font-size: 14px; padding: 8px 10px; min-height: 56px; }
+  .tour-header { padding: 20px 20px 14px; }
+  .tour-body { padding: 16px 20px; }
+  .tour-footer { padding: 12px 20px 18px; }
+}
+
+/* Responsive: phones */
+@media (max-width: 480px) {
+  body { font-size: 13px; }
+  .content-area { padding: 8px 6px; }
+  .top-bar { height: 44px; min-height: 44px; padding: 0 10px; }
+  .top-bar { padding-left: 48px; }
+  .breadcrumb { font-size: 14px; }
+  .top-bar .search-wrap { max-width: 140px; flex: 0 1 140px; }
+  .top-bar .search-input { font-size: 13px; padding: 4px 0; }
+  .session-header { padding: 8px 10px; gap: 6px; }
+  .session-date { min-width: auto; font-size: 14px; }
+  .session-time { min-width: auto; font-size: 12px; }
+  .session-notes { font-size: 12px; }
+  .session-actions { width: 100%; justify-content: flex-end; }
+  .date-pick-btn { font-size: 14px; padding: 2px 4px; }
+  /* Convert table to card layout */
+  .topics-table { display: block; }
+  .topics-table thead { display: none; }
+  .topics-table tbody { display: block; }
+  .topic-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
+  .topic-row > td { display: block; border: none; padding: 2px 0; width: auto; overflow: visible; }
+  /* Expand button */
+  .topic-row > td:nth-child(1) { order: 0; }
+  /* Topic title — full width */
+  .topic-row > td:nth-child(2) { order: 1; flex: 1 1 60%; min-width: 0; }
+  .topic-row > td:nth-child(2) .ii { font-size: 14px; }
+  /* Owner */
+  .topic-row > td:nth-child(3) { order: 3; flex: 0 1 auto; }
+  .topic-row > td:nth-child(3) .ii { font-size: 12px; color: #666; }
+  /* Presenter — hide on phone */
+  .topic-row > td:nth-child(4) { display: none; }
+  /* Type badge */
+  .topic-row > td:nth-child(5) { order: 2; }
+  select.type-sel { font-size: 11px; padding: 2px 6px; }
+  /* Time */
+  .topic-row > td:nth-child(6) { order: 4; }
+  .time-in { width: 40px; font-size: 12px; }
+  .dur { font-size: 10px; }
+  /* Pre-read — hide on phone */
+  .topic-row > td:nth-child(7) { display: none; }
+  /* Delete button */
+  .topic-row > td:nth-child(8) { order: 5; }
+  .del-btn { opacity: 0.5; }
+  /* Detail row */
+  .detail-row { display: none; }
+  .detail-row.open { display: block; }
+  .detail-row > td { display: block; width: 100%; }
+  .detail-panel { padding: 10px 10px; }
+  .detail-grid { grid-template-columns: 1fr; gap: 10px; }
+  .decision-grid { grid-template-columns: 1fr; }
+  .ea { font-size: 13px; min-height: 50px; padding: 8px; }
+  .minutes-ea { min-height: 80px; }
+  /* Session minutes panel */
+  .session-mins-panel { padding: 10px 12px; }
+  /* Modal */
+  .modal { padding: 16px; }
+  .modal textarea { height: 180px; font-size: 11px; }
+  /* Financial views */
+  .fin-month-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .fin-ltp-card { grid-template-columns: 1fr; gap: 10px; }
+  .hub-section-hd { flex-wrap: wrap; font-size: 12px; }
+  /* Tour */
+  .tour-header { padding: 16px 16px 12px; }
+  .tour-header h2 { font-size: 18px; }
+  .tour-body { padding: 14px 16px; }
+  .tour-body p { font-size: 13px; }
+  .tour-footer { padding: 10px 16px 16px; }
+  .tour-btn { padding: 7px 14px; font-size: 13px; }
 }
 
 /* Guided Tour */
@@ -704,6 +816,19 @@ function dur(t0,t1) {
 function findS(id) { return S.sessions.find(s=>s.id===id); }
 function findT(s,id) { return s.topics.find(t=>t.id===id); }
 
+function reorderTopics(sid) {
+  const s = findS(sid); if (!s || !s.topics || s.topics.length < 2) return;
+  s.topics.sort((a, b) => {
+    const ta = normalizeTime(a.t0), tb = normalizeTime(b.t0);
+    if (!ta && !tb) return 0;
+    if (!ta) return 1;
+    if (!tb) return -1;
+    return ta.localeCompare(tb);
+  });
+  const tb = document.getElementById('tb-' + sid);
+  if (tb) tb.innerHTML = s.topics.map(t => rowHtml(t, sid)).join('');
+}
+
 const TYPES = ['','Orientation','Discussion','Decision','Break','Lunch','Workshop'];
 const FORMATS = ['Digital','Physical Oslo','Physical Stockholm','Physical Helsinki'];
 const OWNERS = [
@@ -824,7 +949,7 @@ function rowHtml(t, sid) {
       <div class="time-wrap">
         <input class="time-in" type="text" value="${esc(t.t0)}" placeholder="HH:MM"
                oninput="updT('${sid}','${t.id}','t0',this.value);updDur(this,'${t.id}')"
-               onblur="this.value=normalizeTime(this.value);updT('${sid}','${t.id}','t0',this.value);updDur(this,'${t.id}')">
+               onblur="this.value=normalizeTime(this.value);updT('${sid}','${t.id}','t0',this.value);updDur(this,'${t.id}');reorderTopics('${sid}')">
         <span>–</span>
         <input class="time-in" type="text" value="${esc(t.t1)}" placeholder="HH:MM"
                oninput="updT('${sid}','${t.id}','t1',this.value);updDur(this,'${t.id}')"
