@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RELT — Real Estate Management Hub</title>
+<title>RELT — Staging</title>
+<script>
+(function(){
+  const k = 'relt_staging_auth';
+  if (sessionStorage.getItem(k) === '1') return;
+  const p = prompt('Staging password:');
+  if (p !== 'relt2026') { document.documentElement.innerHTML = '<h2 style="text-align:center;margin-top:40vh;color:#999">Access denied</h2>'; throw 'auth'; }
+  sessionStorage.setItem(k, '1');
+})();
+</script>
 <style>
 :root {
   --green: #7B2020; --dark-red: #7a2822;
