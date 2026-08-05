@@ -331,15 +331,15 @@ main.hidden { display: none; }
 /* Responsive: laptops without external monitor */
 @media (max-width: 1280px) {
   body { font-size: 13px; }
-  .sidebar { width: 200px; min-width: 200px; }
-  .sidebar-brand { padding: 16px 16px; }
-  .brand-title { font-size: 22px; }
-  .brand-subtitle { font-size: 12px; }
-  .nav-item { font-size: 13px; padding: 8px 16px 8px 20px; }
-  .nav-group-title { font-size: 11px; padding: 0 16px 6px; }
-  .sidebar-footer { padding: 10px 16px; }
-  .sidebar-footer .save-status { font-size: 13px; }
-  .main-wrapper { margin-left: 200px; }
+  .sidebar { width: 160px; min-width: 160px; }
+  .sidebar-brand { padding: 14px 12px; }
+  .brand-title { font-size: 20px; }
+  .brand-subtitle { font-size: 11px; }
+  .nav-item { font-size: 12px; padding: 7px 12px 7px 16px; }
+  .nav-group-title { font-size: 10px; padding: 0 12px 5px; }
+  .sidebar-footer { padding: 8px 12px; }
+  .sidebar-footer .save-status { font-size: 12px; }
+  .main-wrapper { margin-left: 160px; }
   .breadcrumb { font-size: 14px; }
   .session-date { font-size: 15px; }
   .session-time { font-size: 13px; }
@@ -2058,10 +2058,6 @@ async function initFirebase() {
     console.warn('Firebase init failed, using localStorage:', e);
     setSyncStatus('⚠ Offline', 'offline');
     _fbReady = false;
-    const banner = document.createElement('div');
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#c62828;color:white;padding:10px 16px;font-size:14px;text-align:center;';
-    banner.textContent = '⚠ Firebase offline — showing cached/placeholder data. Error: ' + (e.message || e);
-    document.body.appendChild(banner);
   }
 }
 
