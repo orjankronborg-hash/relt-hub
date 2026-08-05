@@ -713,10 +713,10 @@ const LEGACY_DECISIONS = [];
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
-if (!localStorage.getItem('relt_migrated_v7')) {
+if (!localStorage.getItem('relt_migrated_v8')) {
   localStorage.removeItem('relt26');
   localStorage.removeItem('relt26v2');
-  localStorage.setItem('relt_migrated_v7', '1');
+  localStorage.setItem('relt_migrated_v8', '1');
 }
 let S = load();
 if (!S.legacyDecisions) S.legacyDecisions = JSON.parse(JSON.stringify(LEGACY_DECISIONS));
@@ -2001,7 +2001,7 @@ async function initFirebase() {
       await db.ref(DOC_ID + '/meta/lastUpdated').set(Date.now());
     } else {
       S.sessions = normalizeFbData(remote.sessions);
-      if (remote.legacyDecisions) S.legacyDecisions = normalizeFbArray(remote.legacyDecisions);
+      S.legacyDecisions = remote.legacyDecisions ? normalizeFbArray(remote.legacyDecisions) : [];
       if (remote.financials) {
         S.financials = remote.financials;
         if (S.financials.forecasts) S.financials.forecasts = normalizeFbArray(S.financials.forecasts);
