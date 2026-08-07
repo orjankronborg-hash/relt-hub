@@ -827,6 +827,7 @@ function findT(s,id) { return s.topics.find(t=>t.id===id); }
 
 function reorderTopics(sid) {
   const s = findS(sid); if (!s || !s.topics || s.topics.length < 2) return;
+  const before = s.topics.map(t => t.id).join(',');
   s.topics.sort((a, b) => {
     const ta = normalizeTime(a.t0), tb = normalizeTime(b.t0);
     if (!ta && !tb) return 0;
@@ -834,8 +835,10 @@ function reorderTopics(sid) {
     if (!tb) return -1;
     return ta.localeCompare(tb);
   });
+  if (s.topics.map(t => t.id).join(',') === before) return;
   const tb = document.getElementById('tb-' + sid);
   if (tb) tb.innerHTML = s.topics.map(t => rowHtml(t, sid)).join('');
+  saveLocal();
 }
 
 const TYPES = ['','Orientation','Discussion','Decision','Break','Lunch','Workshop'];
