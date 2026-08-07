@@ -504,6 +504,7 @@ main.hidden { display: none; }
         <div class="nav-group-title">PLANNING</div>
         <a class="nav-item active" data-tab="agenda" onclick="showTab('agenda')">Meeting Agenda</a>
         <a class="nav-item" data-tab="decisions" onclick="showTab('decisions')">Decision Log</a>
+        <a class="nav-item nav-external" href="https://drive.google.com/drive/u/0/folders/1J89jbu9bH4yxM7eqc8JNa4NTzvwD0lIU" target="_blank" rel="noopener">Drive Folder <span class="external-icon">&#8599;</span></a>
       </div>
       <div class="nav-group">
         <div class="nav-group-title">TRACKING</div>
@@ -876,6 +877,18 @@ function parseSessionDate(str) {
   if (month === -1 || day === -1) return Infinity;
   return month * 100 + day;
 }
+const DRIVE_FOLDER = 'https://drive.google.com/drive/u/0/folders/1J89jbu9bH4yxM7eqc8JNa4NTzvwD0lIU';
+const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function driveMonthLabel(dateStr) {
+  if (!dateStr) return '';
+  const s = dateStr.toLowerCase().replace(/[,]/g,'');
+  for (const p of s.split(/\s+/)) {
+    const m = MONTH_MAP[p];
+    if (m !== undefined) return String(m+1).padStart(2,'0') + '.' + MONTH_FULL[m];
+  }
+  return '';
+}
+
 function render() {
   const m = document.getElementById('main');
   m.innerHTML = '';
@@ -1005,7 +1018,10 @@ function detailHtml(t, sid) {
     <div class="ds" style="margin-bottom:14px">
       <h4>Pre-reads</h4>
       <div id="prl-${t.id}">${prRows}</div>
-      <button class="btn btn-sm" style="margin-top:6px" onclick="addPR('${sid}','${t.id}')">+ Add pre-read link</button>
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+        <button class="btn btn-sm" onclick="addPR('${sid}','${t.id}')">+ Add pre-read link</button>
+        <a class="btn btn-sm" href="${DRIVE_FOLDER}" target="_blank" title="Open RELT Drive folder${(()=>{const m=driveMonthLabel(findS(sid)?.date);return m?' — look for '+m:'';})()}">📂 Drive${(()=>{const m=driveMonthLabel(findS(sid)?.date);return m?' ('+m+')':'';})()}</a>
+      </div>
     </div>
     <div class="minutes-panel">
       <div class="minutes-toolbar">
