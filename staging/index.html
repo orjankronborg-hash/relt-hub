@@ -877,16 +877,28 @@ function parseSessionDate(str) {
   if (month === -1 || day === -1) return Infinity;
   return month * 100 + day;
 }
-const DRIVE_FOLDER = 'https://drive.google.com/drive/u/0/folders/1J89jbu9bH4yxM7eqc8JNa4NTzvwD0lIU';
+const DRIVE_ROOT = 'https://drive.google.com/drive/u/0/folders/1J89jbu9bH4yxM7eqc8JNa4NTzvwD0lIU';
+const DRIVE_MONTHS = {
+  7: '13Nt6oXoPbIDVwgH-ZM0vk8Cu70Jnpq_F',
+  8: '1y4wUsZQPzEDCbX_6rhiU1LbYuK6tIKSq',
+  9: '1JIWKvLpq0SEbwuo6OlzEBU5a8i50s47G',
+  10: '1dXkm0kFYldTJPxc8P1ah4-S8_O-cF_TZ',
+  11: '16bpkDONXZ_aeHI8Asw--NZZU64UyUC93',
+};
 const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function driveMonthLabel(dateStr) {
-  if (!dateStr) return '';
+  if (!dateStr) return {label: '', url: DRIVE_ROOT};
   const s = dateStr.toLowerCase().replace(/[,]/g,'');
   for (const p of s.split(/\s+/)) {
     const m = MONTH_MAP[p];
-    if (m !== undefined) return String(m+1).padStart(2,'0') + '.' + MONTH_FULL[m];
+    if (m !== undefined) {
+      const label = String(m+1).padStart(2,'0') + '.' + MONTH_FULL[m];
+      const folderId = DRIVE_MONTHS[m];
+      const url = folderId ? 'https://drive.google.com/drive/u/0/folders/' + folderId : DRIVE_ROOT;
+      return {label, url};
+    }
   }
-  return '';
+  return {label: '', url: DRIVE_ROOT};
 }
 
 function render() {
@@ -1020,7 +1032,7 @@ function detailHtml(t, sid) {
       <div id="prl-${t.id}">${prRows}</div>
       <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
         <button class="btn btn-sm" onclick="addPR('${sid}','${t.id}')">+ Add pre-read link</button>
-        <a class="btn btn-sm" href="${DRIVE_FOLDER}" target="_blank" title="Open RELT Drive folder${(()=>{const m=driveMonthLabel(findS(sid)?.date);return m?' — look for '+m:'';})()}">📂 Drive${(()=>{const m=driveMonthLabel(findS(sid)?.date);return m?' ('+m+')':'';})()}</a>
+        <a class="btn btn-sm" href="${(()=>{const d=driveMonthLabel(findS(sid)?.date);return d.url;})()}" target="_blank" rel="noopener" title="Open RELT Drive folder">📂 Drive${(()=>{const d=driveMonthLabel(findS(sid)?.date);return d.label?' ('+d.label+')':'';})()}</a>
       </div>
     </div>
     <div class="minutes-panel">
