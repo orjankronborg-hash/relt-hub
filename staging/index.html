@@ -1037,7 +1037,6 @@ function rowHtml(t, sid, fmt) {
                oninput="updT('${sid}','${t.id}','t1',this.value);updDur(this,'${t.id}')"
                onblur="this.value=normalizeTime(this.value);updT('${sid}','${t.id}','t1',this.value);updDur(this,'${t.id}')">
         <span class="dur" id="dur-${t.id}">${d}</span>
-        ${tzHint(fmt)}
       </div>
     </td>
     <td>${prHtml}</td>
