@@ -6,13 +6,13 @@
 <title>RELT — Staging</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
-const _fbApp = firebase.initializeApp({
+firebase.initializeApp({
   apiKey: "AIzaSyCcrEbk9DBj2pBZK8Zd0pHjn03GzGQleyA",
   authDomain: "relt-hub.firebaseapp.com",
   databaseURL: "https://relt-hub-default-rtdb.europe-west1.firebasedatabase.app"
-}, 'gate');
-window._gateAuth = _fbApp.auth();
+});
 </script>
 <style>
 :root {
@@ -516,9 +516,9 @@ async function doGoogleSignIn() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ hd: '' });
-    const result = await window._gateAuth.signInWithPopup(provider);
+    const result = await firebase.auth().signInWithPopup(provider);
     if (!result.user.email.endsWith('@m10s.io') && !result.user.email.endsWith('@vend.com')) {
-      await window._gateAuth.signOut();
+      await firebase.auth().signOut();
       err.textContent = 'Access restricted to @m10s.io and @vend.com accounts.';
       btn.disabled = false;
       btn.style.opacity = '1';
@@ -681,18 +681,10 @@ async function doGoogleSignIn() {
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// FIREBASE CONFIG
+// FIREBASE CONFIG (initialized in <head>)
 // ═══════════════════════════════════════════════════════════════
-firebase.initializeApp({
-  apiKey: "AIzaSyCcrEbk9DBj2pBZK8Zd0pHjn03GzGQleyA",
-  authDomain: "relt-hub.firebaseapp.com",
-  databaseURL: "https://relt-hub-default-rtdb.europe-west1.firebasedatabase.app"
-});
 const db = firebase.database();
 const DOC_ID = 'relt-hub-v2';
 
@@ -2143,21 +2135,7 @@ async function initFirebase() {
   }
 }
 
-async function authAndInit() {
-  if (window._googleCred) {
-    try {
-      const cred = firebase.auth.GoogleAuthProvider.credential(
-        window._googleCred.idToken,
-        window._googleCred.accessToken
-      );
-      await firebase.auth().signInWithCredential(cred);
-    } catch (e) {
-      console.warn('Firebase auth failed:', e);
-    }
-  }
-  initFirebase();
-}
-authAndInit();
+initFirebase();
 
 if (!isSessionAdmin()) {
   const addBtn = document.getElementById('add-session-btn');
