@@ -1357,6 +1357,8 @@ document.addEventListener('input', e => {
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const el = e.target;
+  const richCe = ['mins','purpose','disc','geminiNotes'];
+  if (el.isContentEditable && richCe.includes(el.dataset.ce)) return;
   if (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
     if (el.tagName !== 'TEXTAREA') e.preventDefault();
     save();
