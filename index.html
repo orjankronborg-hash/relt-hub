@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RELT — Management Hub</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 firebase.initializeApp({
   apiKey: "AIzaSyCcrEbk9DBj2pBZK8Zd0pHjn03GzGQleyA",
+  authDomain: "relt-hub.firebaseapp.com",
   databaseURL: "https://relt-hub-default-rtdb.europe-west1.firebasedatabase.app"
 });
 </script>
@@ -102,6 +104,23 @@ body {
   margin-right: 8px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: white;
+  color: #333;
+  font-weight: 600;
+}
+.google-btn:hover { background: #f5f5f5; }
+.google-btn img { width: 20px; height: 20px; }
+.auth-user {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-bottom: 20px;
+}
+.auth-user strong { opacity: 1; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -110,8 +129,18 @@ body {
   <h1>RELT</h1>
   <div class="subtitle">Management Hub</div>
 
+  <!-- Step 0: Google sign-in -->
+  <div id="step0">
+    <button class="google-btn" onclick="googleSignIn()" id="google-btn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+      Sign in with Google
+    </button>
+    <div class="error" id="google-error"></div>
+  </div>
+
   <!-- Step 1: Password -->
-  <div id="step1">
+  <div id="step1" class="hidden">
+    <div class="auth-user" id="auth-user"></div>
     <input type="password" id="pw" placeholder="Enter password" autocomplete="off"
            onkeydown="if(event.key==='Enter')checkPassword()">
     <button onclick="checkPassword()" id="pw-btn">Open</button>
@@ -141,10 +170,51 @@ body {
 <script>
 const DOC_ID = 'relt-hub-v2';
 let decryptedHtml = null;
+let googleCredential = null;
 
 document.getElementById('nameSelect').addEventListener('change', function() {
   document.getElementById('enter-btn').disabled = !this.value;
 });
+
+async function googleSignIn() {
+  const btn = document.getElementById('google-btn');
+  const err = document.getElementById('google-error');
+  btn.disabled = true;
+  err.textContent = '';
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ hd: 'm10s.io' });
+    const result = await firebase.auth().signInWithPopup(provider);
+
+    if (!result.user.email.endsWith('@m10s.io')) {
+      await firebase.auth().signOut();
+      err.textContent = 'Access restricted to @m10s.io accounts.';
+      btn.disabled = false;
+      return;
+    }
+
+    googleCredential = {
+      idToken: result.credential.idToken,
+      accessToken: result.credential.accessToken
+    };
+
+    document.getElementById('auth-user').innerHTML =
+      'Signed in as <strong>' + result.user.email + '</strong>';
+    document.getElementById('step0').classList.add('hidden');
+    document.getElementById('step1').classList.remove('hidden');
+    document.getElementById('pw').focus();
+  } catch (e) {
+    if (e.code === 'auth/popup-closed-by-user') {
+      err.textContent = '';
+    } else if (e.code === 'auth/unauthorized-domain') {
+      err.textContent = 'This domain is not authorized. Contact the admin.';
+    } else {
+      err.textContent = 'Sign-in failed. Please try again.';
+    }
+    btn.disabled = false;
+  }
+}
 
 async function checkPassword() {
   const pw = document.getElementById('pw').value;
@@ -200,7 +270,9 @@ function enterHub() {
   });
 
   document.title = 'RELT — Management Hub';
-  const injected = decryptedHtml.replace('<head>', '<head><script>window.RELT_USER="' + name + '";<\/script>');
+  const credJson = JSON.stringify(googleCredential).replace(/</g, '\\u003c');
+  const injected = decryptedHtml.replace('<head>',
+    '<head><script>window.RELT_USER="' + name + '";window.GOOGLE_CREDENTIAL=' + credJson + ';<\/script>');
   document.documentElement.innerHTML = '<head><style>*{margin:0;padding:0}html,body{height:100%;overflow:hidden}</style></head><body><iframe id="hub" style="position:fixed;top:0;left:0;width:100%;height:100%;border:none;"></iframe></body>';
   const iframe = document.getElementById('hub');
   iframe.srcdoc = injected;
