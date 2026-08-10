@@ -46,7 +46,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; f
 .session-date { font-weight: 700; font-size: 17px; min-width: 120px; outline: none; }
 .session-date.done { color: #999; text-decoration: line-through; }
 .session-date.cancelled { color: #c00; text-decoration: line-through; }
-.session-time { color: #555; font-size: 15px; outline: none; min-width: 110px; }
+.session-time-group { display: flex; align-items: center; gap: 4px; }
+.time-pick { background: white; border: 1px solid #ddd; border-radius: 5px; padding: 5px 8px; font-size: 14px; font-family: inherit; color: #333; cursor: pointer; }
+.time-pick:focus { outline: 2px solid #f0b800; border-color: #f0b800; }
+.time-sep { color: #555; font-size: 15px; padding: 0 2px; }
+.tz-pick { background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 5px 6px; font-size: 13px; color: #888; width: 55px; text-align: center; }
+.tz-pick:hover { border-color: #ddd; }
+.tz-pick:focus { outline: 2px solid #f0b800; border-color: #f0b800; background: #fffbea; color: #333; }
 .format-badge { padding: 3px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; border: none; outline: none; }
 .fmt-Digital { background: var(--teal); color: #1a4f5c; }
 .fmt-Physical { background: var(--pink); color: #8b0000; }
@@ -852,6 +858,23 @@ function normalizeTime(v) {
   if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) return v;
   return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
+function parseSessionTime(str) {
+  if (!str) return { start: '', end: '', tz: '' };
+  const m = str.match(/(\d{1,2}:\d{2})\s*[–\-]\s*(\d{1,2}:\d{2})\s*(.*)/);
+  if (m) return { start: m[1], end: m[2], tz: m[3].trim() };
+  return { start: '', end: '', tz: str };
+}
+function composeSessionTime(start, end, tz) {
+  if (!start && !end) return tz || '';
+  return (start || '') + '–' + (end || '') + (tz ? ' ' + tz : '');
+}
+function setSessionTime(sid, part, value) {
+  const s = findS(sid); if (!s) return;
+  const parsed = parseSessionTime(s.time);
+  parsed[part] = value;
+  s.time = composeSessionTime(parsed.start, parsed.end, parsed.tz);
+  save();
+}
 function dur(t0,t1) {
   if(!t0||!t1) return '';
   t0 = normalizeTime(t0); t1 = normalizeTime(t1);
@@ -961,6 +984,7 @@ function tzHint(format) {
 }
 
 function renderSession(s) {
+  const pTime = parseSessionTime(s.time);
   const el = document.createElement('div');
   el.className = 'session';
   el.dataset.sid = s.id;
@@ -974,7 +998,7 @@ function renderSession(s) {
     <div class="session-header">
       <span class="session-date ${statusCls}" contenteditable data-ce="date" data-sid="${s.id}">${esc(s.date)}</span>
       <button class="date-pick-btn" onclick="openDatePicker('${s.id}',this)" title="Pick date">&#128197;</button>
-      <span class="session-time" contenteditable data-ce="time" data-sid="${s.id}">${esc(s.time)}</span>
+      <div class="session-time-group"><input type="time" class="time-pick" value="${pTime.start}" onchange="setSessionTime('${s.id}','start',this.value)"><span class="time-sep">–</span><input type="time" class="time-pick" value="${pTime.end}" onchange="setSessionTime('${s.id}','end',this.value)"><input type="text" class="tz-pick" value="${esc(pTime.tz)}" placeholder="CET" onchange="setSessionTime('${s.id}','tz',this.value)"></div>
       ${tzHint(s.format)}
       <select class="format-badge fmt-${fmtKey}" onchange="setFormat('${s.id}',this.value,this)">${FORMATS.map(f=>`<option value="${f}"${f===s.format?' selected':''}>${f}</option>`).join('')}</select>
       <span class="session-notes" contenteditable data-ce="notes" data-sid="${s.id}" data-ph="Session notes…">${esc(s.notes)}</span>
@@ -1325,20 +1349,12 @@ document.addEventListener('input', e => {
   } else if (sid) {
     const s=findS(sid); if(!s) return;
     s[ce]=val;
-    if (ce !== 'time') saveLocal();
+    saveLocal();
   }
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const el = e.target;
-  if (el.dataset.ce === 'time') {
-    e.preventDefault();
-    const sid = el.dataset.sid;
-    const s = findS(sid); if(s) { s.time = el.innerText.trim(); }
-    el.blur();
-    save();
-    return;
-  }
   if (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
     if (el.tagName !== 'TEXTAREA') e.preventDefault();
     save();
