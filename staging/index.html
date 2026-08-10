@@ -54,6 +54,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; f
 .session-notes:empty:before { content: attr(data-ph); color: #bbb; }
 .date-pick-btn { background: #f0e8e8; border: 1px solid #d4a4a4; cursor: pointer; font-size: 16px; padding: 3px 6px; opacity: 0.8; transition: opacity 0.15s, background 0.15s; line-height: 1; border-radius: 4px; color: #7B2020; }
 .date-pick-btn:hover { opacity: 1; background: #e8d4d4; }
+.tz-hint { font-size: 11px; color: #999; font-style: italic; white-space: nowrap; }
 .session-actions { display: flex; gap: 6px; margin-left: auto; }
 
 /* Table */
@@ -962,6 +963,11 @@ function toggleAgendaSort() {
   render();
 }
 
+function tzHint(format) {
+  if (format && format.includes('Helsinki')) return '<span class="tz-hint">(-1h NO/SE)</span>';
+  return '<span class="tz-hint">(+1h FI)</span>';
+}
+
 function renderSession(s) {
   const el = document.createElement('div');
   el.className = 'session';
@@ -977,6 +983,7 @@ function renderSession(s) {
       <span class="session-date ${statusCls}" contenteditable data-ce="date" data-sid="${s.id}">${esc(s.date)}</span>
       <button class="date-pick-btn" onclick="openDatePicker('${s.id}',this)" title="Pick date">&#128197;</button>
       <span class="session-time" contenteditable data-ce="time" data-sid="${s.id}">${esc(s.time)}</span>
+      ${tzHint(s.format)}
       <select class="format-badge fmt-${fmtKey}" onchange="setFormat('${s.id}',this.value,this)">${FORMATS.map(f=>`<option value="${f}"${f===s.format?' selected':''}>${f}</option>`).join('')}</select>
       <span class="session-notes" contenteditable data-ce="notes" data-sid="${s.id}" data-ph="Session notes…">${esc(s.notes)}</span>
       <div class="session-actions">
@@ -1270,6 +1277,8 @@ function setFormat(sid, val, el) {
   s.format = val;
   const fk = val.startsWith('Physical') ? 'Physical' : 'Digital';
   el.className = `format-badge fmt-${fk}`;
+  const hint = el.closest('.session-header').querySelector('.tz-hint');
+  if (hint) hint.innerHTML = val.includes('Helsinki') ? '(-1h NO/SE)' : '(+1h FI)';
   save();
 }
 
