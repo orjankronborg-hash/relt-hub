@@ -47,7 +47,7 @@ body {
   opacity: 0.6;
   margin-bottom: 32px;
 }
-.gate input, .gate select {
+.gate select {
   width: 100%;
   padding: 14px 16px;
   border: 1px solid rgba(255,255,255,0.25);
@@ -58,13 +58,12 @@ body {
   font-family: inherit;
   outline: none;
   margin-bottom: 16px;
+  cursor: pointer;
 }
-.gate input::placeholder { color: rgba(255,255,255,0.4); }
-.gate input:focus, .gate select:focus {
+.gate select:focus {
   border-color: rgba(255,255,255,0.5);
   background: rgba(255,255,255,0.15);
 }
-.gate select { cursor: pointer; }
 .gate select option { background: #4A1212; color: white; }
 .gate button {
   width: 100%;
@@ -129,8 +128,8 @@ body {
   <h1>RELT</h1>
   <div class="subtitle">Management Hub</div>
 
-  <!-- Step 0: Google sign-in -->
-  <div id="step0">
+  <!-- Step 1: Google sign-in -->
+  <div id="step1">
     <button class="google-btn" onclick="googleSignIn()" id="google-btn">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
       Sign in with Google
@@ -138,17 +137,9 @@ body {
     <div class="error" id="google-error"></div>
   </div>
 
-  <!-- Step 1: Password -->
-  <div id="step1" class="hidden">
-    <div class="auth-user" id="auth-user"></div>
-    <input type="password" id="pw" placeholder="Enter password" autocomplete="off"
-           onkeydown="if(event.key==='Enter')checkPassword()">
-    <button onclick="checkPassword()" id="pw-btn">Open</button>
-    <div class="error" id="pw-error"></div>
-  </div>
-
   <!-- Step 2: Name selection -->
   <div id="step2" class="hidden">
+    <div class="auth-user" id="auth-user"></div>
     <select id="nameSelect">
       <option value="" disabled selected>Select your name...</option>
       <option value="Kjersti">Kjersti Høklingen</option>
@@ -169,6 +160,7 @@ body {
 
 <script>
 const DOC_ID = 'relt-hub-v2';
+const PW = 'NextMoveEasy';
 let decryptedHtml = null;
 let googleCredential = null;
 
@@ -176,10 +168,33 @@ document.getElementById('nameSelect').addEventListener('change', function() {
   document.getElementById('enter-btn').disabled = !this.value;
 });
 
+async function decrypt() {
+  const r = await fetch('d.json?v=' + Date.now());
+  if (!r.ok) throw new Error('Could not load content file.');
+  const D = await r.json();
+
+  const enc = new TextEncoder();
+  const salt = Uint8Array.from(atob(D.s), c => c.charCodeAt(0));
+  const iv   = Uint8Array.from(atob(D.i), c => c.charCodeAt(0));
+  const ct   = Uint8Array.from(atob(D.c), c => c.charCodeAt(0));
+
+  const km = await crypto.subtle.importKey('raw', enc.encode(PW), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    km,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+  const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return new TextDecoder().decode(dec);
+}
+
 async function googleSignIn() {
   const btn = document.getElementById('google-btn');
   const err = document.getElementById('google-error');
   btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>Signing in...';
   err.textContent = '';
 
   try {
@@ -191,6 +206,7 @@ async function googleSignIn() {
       await firebase.auth().signOut();
       err.textContent = 'Access restricted to @m10s.io accounts.';
       btn.disabled = false;
+      btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="width:20px;height:20px"> Sign in with Google';
       return;
     }
 
@@ -199,11 +215,13 @@ async function googleSignIn() {
       accessToken: result.credential.accessToken
     };
 
+    btn.innerHTML = '<span class="loading"></span>Loading hub...';
+    decryptedHtml = await decrypt();
+
     document.getElementById('auth-user').innerHTML =
       'Signed in as <strong>' + result.user.email + '</strong>';
-    document.getElementById('step0').classList.add('hidden');
-    document.getElementById('step1').classList.remove('hidden');
-    document.getElementById('pw').focus();
+    document.getElementById('step1').classList.add('hidden');
+    document.getElementById('step2').classList.remove('hidden');
   } catch (e) {
     if (e.code === 'auth/popup-closed-by-user') {
       err.textContent = '';
@@ -213,46 +231,7 @@ async function googleSignIn() {
       err.textContent = 'Sign-in failed. Please try again.';
     }
     btn.disabled = false;
-  }
-}
-
-async function checkPassword() {
-  const pw = document.getElementById('pw').value;
-  const btn = document.getElementById('pw-btn');
-  const err = document.getElementById('pw-error');
-  if (!pw) { err.textContent = 'Please enter a password.'; return; }
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="loading"></span>Decrypting...';
-  err.textContent = '';
-
-  try {
-    const r = await fetch('d.json?v=' + Date.now());
-    if (!r.ok) throw new Error('Could not load content file.');
-    const D = await r.json();
-
-    const enc = new TextEncoder();
-    const salt = Uint8Array.from(atob(D.s), c => c.charCodeAt(0));
-    const iv   = Uint8Array.from(atob(D.i), c => c.charCodeAt(0));
-    const ct   = Uint8Array.from(atob(D.c), c => c.charCodeAt(0));
-
-    const km = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-      km,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    );
-    const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-    decryptedHtml = new TextDecoder().decode(dec);
-
-    document.getElementById('step1').classList.add('hidden');
-    document.getElementById('step2').classList.remove('hidden');
-  } catch (e) {
-    err.textContent = 'Wrong password. Please try again.';
-    btn.disabled = false;
-    btn.textContent = 'Open';
+    btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="width:20px;height:20px"> Sign in with Google';
   }
 }
 
