@@ -877,7 +877,7 @@ function reorderTopics(sid) {
   });
   if (s.topics.map(t => t.id).join(',') === before) return;
   const tb = document.getElementById('tb-' + sid);
-  if (tb) tb.innerHTML = s.topics.map(t => rowHtml(t, sid)).join('');
+  if (tb) tb.innerHTML = s.topics.map(t => rowHtml(t, sid, s.format)).join('');
   saveLocal();
 }
 
@@ -996,12 +996,12 @@ function renderSession(s) {
         <th style="width:20%">Pre-read</th>
         <th style="width:28px"></th>
       </tr></thead>
-      <tbody id="tb-${s.id}">${s.topics.map(t=>rowHtml(t,s.id)).join('')}</tbody>
+      <tbody id="tb-${s.id}">${s.topics.map(t=>rowHtml(t,s.id,s.format)).join('')}</tbody>
     </table>`;
   return el;
 }
 
-function rowHtml(t, sid) {
+function rowHtml(t, sid, fmt) {
   const isBreak = t.type==='Break', isLunch = t.type==='Lunch';
   const rc = isBreak ? 'break-row' : isLunch ? 'lunch-row' : '';
   const d = dur(t.t0, t.t1);
@@ -1037,6 +1037,7 @@ function rowHtml(t, sid) {
                oninput="updT('${sid}','${t.id}','t1',this.value);updDur(this,'${t.id}')"
                onblur="this.value=normalizeTime(this.value);updT('${sid}','${t.id}','t1',this.value);updDur(this,'${t.id}')">
         <span class="dur" id="dur-${t.id}">${d}</span>
+        ${tzHint(fmt)}
       </div>
     </td>
     <td>${prHtml}</td>
@@ -1200,7 +1201,7 @@ function addTopic(sid) {
     decisionComment:'',nextSteps:'',responsible:'',decisionFinalized:false};
   s.topics.push(t);
   const tb=document.getElementById('tb-'+sid);
-  if(tb){ tb.insertAdjacentHTML('beforeend', rowHtml(t,sid)); }
+  if(tb){ tb.insertAdjacentHTML('beforeend', rowHtml(t,sid,s.format)); }
   setTimeout(()=>{
     const inp=document.querySelector(`[data-tid="${t.id}"] .ii-bold`);
     if(inp) inp.focus();
