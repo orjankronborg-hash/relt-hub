@@ -199,12 +199,12 @@ async function googleSignIn() {
 
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ hd: 'm10s.io' });
+    provider.setCustomParameters({ hd: '' });
     const result = await firebase.auth().signInWithPopup(provider);
 
-    if (!result.user.email.endsWith('@m10s.io')) {
+    if (!result.user.email.endsWith('@m10s.io') && !result.user.email.endsWith('@vend.com')) {
       await firebase.auth().signOut();
-      err.textContent = 'Access restricted to @m10s.io accounts.';
+      err.textContent = 'Access restricted to @m10s.io and @vend.com accounts.';
       btn.disabled = false;
       btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="width:20px;height:20px"> Sign in with Google';
       return;
