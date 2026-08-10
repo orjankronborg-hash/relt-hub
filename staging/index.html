@@ -975,8 +975,8 @@ function renderSession(s) {
       <span class="session-date ${statusCls}" contenteditable data-ce="date" data-sid="${s.id}">${esc(s.date)}</span>
       <button class="date-pick-btn" onclick="openDatePicker('${s.id}',this)" title="Pick date">&#128197;</button>
       <span class="session-time" contenteditable data-ce="time" data-sid="${s.id}">${esc(s.time)}</span>
-      <select class="format-badge fmt-${fmtKey}" onchange="setFormat('${s.id}',this.value,this)">${FORMATS.map(f=>`<option value="${f}"${f===s.format?' selected':''}>${f}</option>`).join('')}</select>
       ${tzHint(s.format)}
+      <select class="format-badge fmt-${fmtKey}" onchange="setFormat('${s.id}',this.value,this)">${FORMATS.map(f=>`<option value="${f}"${f===s.format?' selected':''}>${f}</option>`).join('')}</select>
       <span class="session-notes" contenteditable data-ce="notes" data-sid="${s.id}" data-ph="Session notes…">${esc(s.notes)}</span>
       <div class="session-actions">
         <button class="btn btn-sm" onclick="toggleSessionMins('${s.id}')" title="View all minutes">Minutes</button>
