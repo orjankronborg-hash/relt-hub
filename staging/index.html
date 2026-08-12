@@ -231,6 +231,32 @@ main.hidden { display: none; }
 .hub-section-hd span { font-size:12px; color:#aaa; font-weight:400; text-transform:none; letter-spacing:0; }
 .hub-add-btn { margin-left:auto; }
 
+/* CHARTER VIEW */
+.charter-section { background: white; border-radius: 10px; border: 1px solid #e8e8e8; margin-bottom: 20px; overflow: hidden; }
+.charter-toggle { display: flex; align-items: center; gap: 12px; padding: 18px 22px; cursor: pointer; -webkit-user-select: none; user-select: none; transition: background 0.15s; }
+.charter-toggle:hover { background: #faf8f8; }
+.charter-toggle-icon { font-size: 20px; width: 28px; text-align: center; }
+.charter-toggle h3 { font-size: 17px; font-weight: 700; color: #1f1f1f; margin: 0; }
+.charter-toggle .charter-sub { font-size: 13px; color: #999; font-weight: 400; margin-left: auto; }
+.charter-toggle .charter-arrow { font-size: 12px; color: #aaa; transition: transform 0.2s; }
+.charter-section.open .charter-arrow { transform: rotate(90deg); }
+.charter-body { display: none; padding: 0 22px 22px; }
+.charter-section.open .charter-body { display: block; }
+.charter-principle { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f2f2f2; }
+.charter-principle:last-child { border-bottom: none; }
+.charter-num { font-size: 15px; font-weight: 800; color: #7B2020; min-width: 24px; }
+.charter-text { font-size: 15px; line-height: 1.5; color: #333; }
+.charter-hw-item { background: #f8f5f5; border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; }
+.charter-hw-item:last-child { margin-bottom: 0; }
+.charter-hw-label { font-size: 13px; font-weight: 800; color: #7B2020; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.charter-hw-desc { font-size: 14px; line-height: 1.6; color: #444; }
+.charter-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+.charter-step { background: #4A1212; color: white; border-radius: 8px; padding: 14px; text-align: center; }
+.charter-step-num { font-size: 22px; font-weight: 800; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+.charter-step-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.charter-step-desc { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.4; }
+@media (max-width: 700px) { .charter-steps { grid-template-columns: 1fr 1fr; } }
+
 /* FINANCIAL VIEW */
 .fin-ltp-card { background:white; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.1); padding:16px 20px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; align-items:start; }
 @media(max-width:800px) { .fin-ltp-card { grid-template-columns:1fr; } }
@@ -571,6 +597,10 @@ async function doGoogleSignIn() {
         <div class="nav-group-title">FINANCE</div>
         <a class="nav-item" data-tab="financial" onclick="showTab('financial')">Financial Documents</a>
       </div>
+      <div class="nav-group">
+        <div class="nav-group-title">TEAM</div>
+        <a class="nav-item" data-tab="charter" onclick="showTab('charter')">Charter</a>
+      </div>
     </nav>
     <div class="sidebar-footer">
       <span class="save-status" id="ss">All changes saved &#10003;</span>
@@ -666,6 +696,61 @@ async function doGoogleSignIn() {
         <div class="hub-section">
           <div class="hub-section-hd">Monthly Financial Reports</div>
           <div class="fin-month-grid" id="fin-monthly"></div>
+        </div>
+
+      </div>
+
+      <div id="charter-view" class="hub-view">
+
+        <div class="charter-section">
+          <div class="charter-toggle" onclick="this.parentElement.classList.toggle('open')">
+            <span class="charter-toggle-icon">&#129309;</span>
+            <h3>Softwiring for Trust</h3>
+            <span class="charter-sub">7 principles</span>
+            <span class="charter-arrow">&#9654;</span>
+          </div>
+          <div class="charter-body">
+            <div class="charter-principle"><span class="charter-num">1.</span><span class="charter-text">I assume the best intentions and subtitle my doubts.</span></div>
+            <div class="charter-principle"><span class="charter-num">2.</span><span class="charter-text">I talk about my colleagues as if they were in the room.</span></div>
+            <div class="charter-principle"><span class="charter-num">3.</span><span class="charter-text">I clear the air directly with others 1-1 when it is needed.</span></div>
+            <div class="charter-principle"><span class="charter-num">4.</span><span class="charter-text">I seek and give feedback regularly, clearly and compassionately.</span></div>
+            <div class="charter-principle"><span class="charter-num">5.</span><span class="charter-text">I disagree outloud and commit when discussion time is over; &ldquo;reruns&rdquo; are only taken in a structured way with the whole team.</span></div>
+            <div class="charter-principle"><span class="charter-num">6.</span><span class="charter-text">I strive to forgive human mistakes, learn from them and move on.</span></div>
+            <div class="charter-principle"><span class="charter-num">7.</span><span class="charter-text">I actively help my colleagues to be accountable to the behaviors in this charter.</span></div>
+          </div>
+        </div>
+
+        <div class="charter-section">
+          <div class="charter-toggle" onclick="this.parentElement.classList.toggle('open')">
+            <span class="charter-toggle-icon">&#9881;</span>
+            <h3>Hardwiring</h3>
+            <span class="charter-sub">How we run RELT</span>
+            <span class="charter-arrow">&#9654;</span>
+          </div>
+          <div class="charter-body">
+            <div class="charter-hw-item">
+              <div class="charter-hw-label">&#128197; Meetings &amp; Rhythm</div>
+              <div class="charter-hw-desc">Weekly digital RELT &mdash; 3 hrs. Physical every 4&ndash;6 weeks rotating Oslo / Helsinki / Stockholm. Offsite twice a year. Friday check-ins 30 min continue. Meeting evaluations on a regular basis.</div>
+            </div>
+            <div class="charter-hw-item">
+              <div class="charter-hw-label">&#128203; Agenda Ownership</div>
+              <div class="charter-hw-desc">We have common ownership. Kjersti &amp; &Oslash;rjan are responsible for timebox and finalising the agenda.</div>
+            </div>
+            <div class="charter-hw-item">
+              <div class="charter-hw-label">&#128196; Pre-read</div>
+              <div class="charter-hw-desc">To be shared in due time (EOD Friday for a Wednesday meeting). Material must include a purpose statement and discussion points. Pre-read included in a shared Drive.</div>
+            </div>
+            <div class="charter-hw-item">
+              <div class="charter-hw-label">&#127919; Topic Owner Responsibility</div>
+              <div class="charter-hw-desc">The one bringing a topic owns it end-to-end:</div>
+              <div class="charter-steps">
+                <div class="charter-step"><div class="charter-step-num">1</div><div class="charter-step-title">Pre-read</div><div class="charter-step-desc">Purpose statement &amp; discussion points shared in due time</div></div>
+                <div class="charter-step"><div class="charter-step-num">2</div><div class="charter-step-title">Invitation</div><div class="charter-step-desc">Right people in the room, calendar sent with pre-read</div></div>
+                <div class="charter-step"><div class="charter-step-num">3</div><div class="charter-step-title">Run the session</div><div class="charter-step-desc">Intro, facilitation, outro &mdash; keep to the timebox</div></div>
+                <div class="charter-step"><div class="charter-step-num">4</div><div class="charter-step-title">Minutes &amp; decision</div><div class="charter-step-desc">Written summary and decision logged by Topic owner</div></div>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -1459,7 +1544,7 @@ function showTab(tab) {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
   // Update breadcrumb
-  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', bizreview: 'Business Reviews', financial: 'Financial Documents'};
+  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Charter'};
   const bc = document.getElementById('breadcrumb-view');
   if (bc) bc.textContent = names[tab] || tab;
   // Toggle views
@@ -1468,6 +1553,7 @@ function showTab(tab) {
   document.getElementById('decision-log-view').style.display = tab === 'decisions' ? 'block' : 'none';
   document.getElementById('bizreview-view').style.display = tab === 'bizreview' ? 'block' : 'none';
   document.getElementById('financial-view').style.display = tab === 'financial' ? 'block' : 'none';
+  document.getElementById('charter-view').style.display = tab === 'charter' ? 'block' : 'none';
   // Render active view
   if (tab === 'decisions') renderDecisionLog();
   if (tab === 'bizreview') renderBizReviews();
@@ -1904,6 +1990,7 @@ render();
 document.getElementById('decision-log-view').style.display = 'none';
 document.getElementById('bizreview-view').style.display = 'none';
 document.getElementById('financial-view').style.display = 'none';
+document.getElementById('charter-view').style.display = 'none';
 
 // ═══════════════════════════════════════════════════════════════
 // FINANCIAL RENDER + ACTIONS
