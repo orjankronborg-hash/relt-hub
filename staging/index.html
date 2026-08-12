@@ -599,7 +599,7 @@ async function doGoogleSignIn() {
       </div>
       <div class="nav-group">
         <div class="nav-group-title">TEAM</div>
-        <a class="nav-item" data-tab="charter" onclick="showTab('charter')">Charter</a>
+        <a class="nav-item" data-tab="charter" onclick="showTab('charter')">Team Principles</a>
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -1544,7 +1544,7 @@ function showTab(tab) {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
   // Update breadcrumb
-  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Charter'};
+  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Team Principles'};
   const bc = document.getElementById('breadcrumb-view');
   if (bc) bc.textContent = names[tab] || tab;
   // Toggle views
