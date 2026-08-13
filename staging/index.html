@@ -257,6 +257,28 @@ main.hidden { display: none; }
 .charter-step-desc { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.4; }
 @media (max-width: 700px) { .charter-steps { grid-template-columns: 1fr 1fr; } }
 
+/* RE MEETUP VIEW */
+.rm-session { background: white; border: 1px solid #e8e8e8; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+.rm-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #f6f4f4; border-bottom: 1px solid #e8e8e8; flex-wrap: wrap; }
+.rm-date { font-weight: 700; font-size: 17px; outline: none; min-width: 110px; }
+.rm-date.done { color: #999; text-decoration: line-through; }
+.rm-date.cancelled { color: #c00; text-decoration: line-through; }
+.rm-deck { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.rm-deck a { color: #1155cc; text-decoration: none; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rm-deck-inp { border: 1px solid #ddd; border-radius: 4px; padding: 3px 6px; font-size: 12px; font-family: inherit; width: 180px; }
+.rm-deck-inp:focus { outline: none; border-color: var(--green); }
+.rm-table { width: 100%; border-collapse: collapse; }
+.rm-table th { background: #fafafa; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #ebebeb; }
+.rm-table td { padding: 7px 10px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
+.rm-table .ii { background: transparent; border: none; font-size: 14px; font-family: inherit; width: 100%; padding: 2px 3px; }
+.rm-table .ii:focus { background: #fffbea; outline: 2px solid #f0b800; border-radius: 2px; }
+.rm-table .ii::placeholder { color: #ccc; font-style: italic; }
+.rm-min-inp { width: 50px; text-align: center; border: 1px solid #ddd; border-radius: 4px; padding: 3px; font-size: 14px; font-family: inherit; }
+.rm-min-inp:focus { outline: 2px solid #f0b800; border-radius: 2px; }
+.rm-total { font-size: 13px; font-weight: 700; color: #555; text-align: right; padding: 6px 10px; }
+.rm-actions { padding: 10px 18px; display: flex; gap: 8px; }
+.rm-status { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; }
+
 /* FINANCIAL VIEW */
 .fin-ltp-card { background:white; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.1); padding:16px 20px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; align-items:start; }
 @media(max-width:800px) { .fin-ltp-card { grid-template-columns:1fr; } }
@@ -583,6 +605,7 @@ async function doGoogleSignIn() {
         <div class="nav-group-title">PLANNING</div>
         <a class="nav-item active" data-tab="agenda" onclick="showTab('agenda')">Meeting Agenda</a>
         <a class="nav-item" data-tab="decisions" onclick="showTab('decisions')">Decision Log</a>
+        <a class="nav-item" data-tab="remeetup" onclick="showTab('remeetup')">RE Meetup <span style="background:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);font-size:9px;padding:1px 6px;border-radius:4px;margin-left:4px;font-weight:700;letter-spacing:0.5px">BETA</span></a>
         <a class="nav-item nav-external" href="https://drive.google.com/drive/u/0/folders/1J89jbu9bH4yxM7eqc8JNa4NTzvwD0lIU" target="_blank" rel="noopener">RELT Drive Folder <span class="external-icon">&#8599;</span></a>
       </div>
       <div class="nav-group">
@@ -755,6 +778,8 @@ async function doGoogleSignIn() {
 
       </div>
 
+      <div id="remeetup-view" class="hub-view"></div>
+
       <!-- Notification Modal -->
       <div class="modal-overlay" id="notify-modal">
         <div class="modal">
@@ -882,6 +907,7 @@ function save() {
     db.ref(DOC_ID + '/legacyDecisions').set(S.legacyDecisions);
     db.ref(DOC_ID + '/bizReviews').set(S.bizReviews || []);
     db.ref(DOC_ID + '/financials').set(S.financials);
+    db.ref(DOC_ID + '/reMeetups').set(S.reMeetups || []);
     db.ref(DOC_ID + '/meta/lastUpdated').set(Date.now());
   }
   document.getElementById('ss').textContent = 'All changes saved ✓';
@@ -1439,6 +1465,14 @@ document.addEventListener('input', e => {
     saveLocal();
   }
 });
+document.addEventListener('input', e => {
+  const el = e.target;
+  const rmce = el.dataset.rmce;
+  if (!rmce) return;
+  const m = findRM(el.dataset.rmsid); if (!m) return;
+  m[rmce] = el.innerText || '';
+  saveLocal();
+});
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const el = e.target;
@@ -1544,7 +1578,7 @@ function showTab(tab) {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
   // Update breadcrumb
-  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Team Principles'};
+  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', remeetup: 'RE Meetup', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Team Principles'};
   const bc = document.getElementById('breadcrumb-view');
   if (bc) bc.textContent = names[tab] || tab;
   // Toggle views
@@ -1553,9 +1587,11 @@ function showTab(tab) {
   document.getElementById('decision-log-view').style.display = tab === 'decisions' ? 'block' : 'none';
   document.getElementById('bizreview-view').style.display = tab === 'bizreview' ? 'block' : 'none';
   document.getElementById('financial-view').style.display = tab === 'financial' ? 'block' : 'none';
+  document.getElementById('remeetup-view').style.display = tab === 'remeetup' ? 'block' : 'none';
   document.getElementById('charter-view').style.display = tab === 'charter' ? 'block' : 'none';
   // Render active view
   if (tab === 'decisions') renderDecisionLog();
+  if (tab === 'remeetup') renderREMeetup();
   if (tab === 'bizreview') renderBizReviews();
   if (tab === 'financial') renderFinancials();
 }
@@ -1815,6 +1851,163 @@ function emailNotify() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// RE MEETUP
+// ═══════════════════════════════════════════════════════════════
+const RM_OWNERS = [
+  'Kjersti Høklingen','Laila Dahlen','Ørjan Kronborg','Karl Stenstadvold',
+  'Miili Vaattovaara','Tiina Aalto-Fischer','Juha Karonen','Mathilda Hayes',
+  'Francesca Cortesi','Anne Ormstad','Christine Gelfgren',
+  'Jørgen Hellestveit','Mona','Magne','Sofia Manninger','Eirik Dysthe','Axel Hansson'
+];
+
+function findRM(sid) { return (S.reMeetups||[]).find(m => m.id === sid); }
+
+function setRMTime(sid, part, value) {
+  const m = findRM(sid); if (!m) return;
+  const parsed = parseSessionTime(m.time);
+  parsed[part] = value;
+  m.time = composeSessionTime(parsed.start, parsed.end, parsed.tz);
+  save();
+}
+
+function addREMeetup() {
+  if (!S.reMeetups) S.reMeetups = [];
+  const m = { id: uid(), date: '', time: '', deck: '', deckLabel: '', status: '', topics: [
+    { id: uid(), theme: '', details: '', owner: '', presenter: '', mins: 0 }
+  ]};
+  S.reMeetups.unshift(m);
+  save();
+  renderREMeetup();
+}
+
+function addRMTopic(sid) {
+  const m = findRM(sid); if (!m) return;
+  m.topics.push({ id: uid(), theme: '', details: '', owner: '', presenter: '', mins: 0 });
+  save();
+  renderREMeetup();
+}
+
+function delRMTopic(sid, tid) {
+  const m = findRM(sid); if (!m) return;
+  m.topics = m.topics.filter(t => t.id !== tid);
+  save();
+  renderREMeetup();
+}
+
+function delREMeetup(sid) {
+  if (!confirm('Delete this meetup session?')) return;
+  S.reMeetups = (S.reMeetups||[]).filter(m => m.id !== sid);
+  save();
+  renderREMeetup();
+}
+
+function updRM(sid, field, value) {
+  const m = findRM(sid); if (!m) return;
+  m[field] = value;
+  save();
+}
+
+function updRMT(sid, tid, field, value) {
+  const m = findRM(sid); if (!m) return;
+  const t = m.topics.find(x => x.id === tid); if (!t) return;
+  t[field] = value;
+  if (field === 'mins') renderRMTotal(sid);
+  save();
+}
+
+function renderRMTotal(sid) {
+  const m = findRM(sid); if (!m) return;
+  const total = m.topics.reduce((s, t) => s + (parseInt(t.mins)||0), 0);
+  const el = document.getElementById('rm-total-' + sid);
+  if (el) el.textContent = total ? total + ' min' : '';
+}
+
+function setRMDeck(sid, url) {
+  const m = findRM(sid); if (!m) return;
+  if (url) {
+    m.deck = url;
+    if (!m.deckLabel) m.deckLabel = 'Deck';
+  } else {
+    m.deck = '';
+    m.deckLabel = '';
+  }
+  save();
+  renderREMeetup();
+}
+
+function renderREMeetup() {
+  const view = document.getElementById('remeetup-view');
+  if (!S.reMeetups) S.reMeetups = [];
+  const meetups = S.reMeetups;
+
+  let html = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">';
+  html += '<button class="btn btn-sm btn-green" onclick="addREMeetup()">+ Add Meetup</button>';
+  html += '</div>';
+
+  for (const m of meetups) {
+    const statusCls = m.status === 'done' ? 'done' : m.status === 'cancelled' ? 'cancelled' : '';
+    const pTime = parseSessionTime(m.time);
+    const total = m.topics.reduce((s, t) => s + (parseInt(t.mins)||0), 0);
+
+    html += `<div class="rm-session">`;
+    html += `<div class="rm-header">`;
+    html += `<span class="rm-date ${statusCls}" contenteditable data-rmce="date" data-rmsid="${m.id}">${esc(m.date)}</span>`;
+    html += `<div class="session-time-group">`;
+    html += `<input type="time" class="time-pick" value="${pTime.start}" onchange="setRMTime('${m.id}','start',this.value)">`;
+    html += `<span class="time-sep">–</span>`;
+    html += `<input type="time" class="time-pick" value="${pTime.end}" onchange="setRMTime('${m.id}','end',this.value)">`;
+    html += `<input type="text" class="tz-pick" value="${esc(pTime.tz)}" placeholder="CET" onchange="setRMTime('${m.id}','tz',this.value)">`;
+    html += `</div>`;
+
+    if (m.deck) {
+      html += `<div class="rm-deck"><span>📁</span><a href="${esc(m.deck)}" target="_blank">${esc(m.deckLabel||'Deck')}</a>`;
+      html += `<button class="btn btn-sm" onclick="setRMDeck('${m.id}','');" style="font-size:10px;padding:1px 5px;">✕</button></div>`;
+    } else {
+      html += `<div class="rm-deck"><span>📁</span><input class="rm-deck-inp" type="url" placeholder="Paste deck link…" onkeydown="if(event.key==='Enter'){setRMDeck('${m.id}',this.value);}" onblur="if(this.value.trim())setRMDeck('${m.id}',this.value);"></div>`;
+    }
+
+    html += `<select class="rm-status" style="margin-left:auto;background:${m.status==='done'?'#e8f5e9':m.status==='cancelled'?'#fce4ec':'#f5f5f5'}" onchange="updRM('${m.id}','status',this.value);renderREMeetup()">`;
+    html += `<option value=""${!m.status?' selected':''}>Active</option>`;
+    html += `<option value="done"${m.status==='done'?' selected':''}>Done</option>`;
+    html += `<option value="cancelled"${m.status==='cancelled'?' selected':''}>Cancelled</option>`;
+    html += `</select>`;
+
+    html += `<button class="del-btn" style="opacity:1;font-size:16px;" onclick="delREMeetup('${m.id}')" title="Delete meetup">🗑</button>`;
+
+    html += `</div>`;
+
+    html += `<table class="rm-table"><thead><tr>`;
+    html += `<th style="width:22%">Theme</th>`;
+    html += `<th style="width:32%">Details</th>`;
+    html += `<th style="width:18%">Owner</th>`;
+    html += `<th style="width:14%">Presenter</th>`;
+    html += `<th style="width:8%">Min</th>`;
+    html += `<th style="width:6%"></th>`;
+    html += `</tr></thead><tbody>`;
+
+    for (const t of m.topics) {
+      html += `<tr>`;
+      html += `<td><input class="ii ii-bold" value="${esc(t.theme)}" placeholder="Theme…" onchange="updRMT('${m.id}','${t.id}','theme',this.value)"></td>`;
+      html += `<td><input class="ii" value="${esc(t.details)}" placeholder="Details…" onchange="updRMT('${m.id}','${t.id}','details',this.value)"></td>`;
+      html += `<td><select class="ii" onchange="updRMT('${m.id}','${t.id}','owner',this.value)"><option value="">—</option>${RM_OWNERS.map(o=>`<option${o===t.owner?' selected':''}>${o}</option>`).join('')}</select></td>`;
+      html += `<td><input class="ii" value="${esc(t.presenter)}" placeholder="" onchange="updRMT('${m.id}','${t.id}','presenter',this.value)"></td>`;
+      html += `<td><input class="rm-min-inp" type="number" min="0" value="${t.mins||''}" placeholder="0" onchange="updRMT('${m.id}','${t.id}','mins',parseInt(this.value)||0)"></td>`;
+      html += `<td><button class="del-btn" style="opacity:0.5" onclick="delRMTopic('${m.id}','${t.id}')" title="Remove topic">✕</button></td>`;
+      html += `</tr>`;
+    }
+
+    html += `<tr><td colspan="4" style="text-align:right" class="rm-total">Total</td>`;
+    html += `<td class="rm-total" id="rm-total-${m.id}">${total ? total + ' min' : ''}</td><td></td></tr>`;
+    html += `</tbody></table>`;
+
+    html += `<div class="rm-actions"><button class="btn btn-sm btn-green" onclick="addRMTopic('${m.id}')">+ Add Topic</button></div>`;
+    html += `</div>`;
+  }
+
+  view.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SEARCH
 // ═══════════════════════════════════════════════════════════════
 function resetSearchHighlights() {
@@ -1990,6 +2183,7 @@ render();
 document.getElementById('decision-log-view').style.display = 'none';
 document.getElementById('bizreview-view').style.display = 'none';
 document.getElementById('financial-view').style.display = 'none';
+document.getElementById('remeetup-view').style.display = 'none';
 document.getElementById('charter-view').style.display = 'none';
 
 // ═══════════════════════════════════════════════════════════════
@@ -2183,6 +2377,7 @@ async function initFirebase() {
       await db.ref(DOC_ID + '/legacyDecisions').set(S.legacyDecisions || LEGACY_DECISIONS);
       await db.ref(DOC_ID + '/financials').set(S.financials);
       await db.ref(DOC_ID + '/bizReviews').set(S.bizReviews || []);
+      await db.ref(DOC_ID + '/reMeetups').set(S.reMeetups || []);
       await db.ref(DOC_ID + '/meta/lastUpdated').set(Date.now());
     } else {
       S.sessions = normalizeFbData(remote.sessions);
@@ -2193,6 +2388,7 @@ async function initFirebase() {
         if (S.financials.monthly) S.financials.monthly = normalizeFbArray(S.financials.monthly);
       }
       if (remote.bizReviews) S.bizReviews = normalizeFbArray(remote.bizReviews);
+      if (remote.reMeetups) S.reMeetups = normalizeFbArray(remote.reMeetups);
       localStorage.setItem('relt26v2', JSON.stringify(S));
       open.clear();
       render();
@@ -2233,6 +2429,13 @@ async function initFirebase() {
       S.bizReviews = normalizeFbArray(snap.val());
       localStorage.setItem('relt26v2', JSON.stringify(S));
       if (!isEditing() && currentTab === 'bizreview') renderBizReviews();
+    });
+
+    db.ref(DOC_ID + '/reMeetups').on('value', snap => {
+      if (!snap.val()) return;
+      S.reMeetups = normalizeFbArray(snap.val());
+      localStorage.setItem('relt26v2', JSON.stringify(S));
+      if (!isEditing() && currentTab === 'remeetup') renderREMeetup();
     });
 
   } catch (e) {
