@@ -2001,7 +2001,7 @@ function renderREMeetup() {
       html += `<tr>`;
       html += `<td><input class="ii ii-bold" value="${esc(t.theme)}" placeholder="Theme…" onchange="updRMT('${m.id}','${t.id}','theme',this.value)"></td>`;
       html += `<td><input class="ii" value="${esc(t.details)}" placeholder="Details…" onchange="updRMT('${m.id}','${t.id}','details',this.value)"></td>`;
-      html += `<td><select class="ii" onchange="updRMT('${m.id}','${t.id}','owner',this.value)"><option value="">—</option>${RM_OWNERS.map(o=>`<option${o===t.owner?' selected':''}>${o}</option>`).join('')}</select></td>`;
+      html += `<td><select class="ii" onchange="updRMT('${m.id}','${t.id}','owner',this.value)"><option value="">—</option>${OWNERS.map(o=>`<option${o===t.owner?' selected':''}>${o}</option>`).join('')}</select></td>`;
       html += `<td><input class="ii" value="${esc(t.presenter)}" placeholder="" onchange="updRMT('${m.id}','${t.id}','presenter',this.value)"></td>`;
       html += `<td><input class="rm-min-inp" type="number" min="0" value="${t.mins||''}" placeholder="0" onchange="updRMT('${m.id}','${t.id}','mins',parseInt(this.value)||0)"></td>`;
       html += `<td><button class="del-btn" style="opacity:0.5" onclick="delRMTopic('${m.id}','${t.id}')" title="Remove topic">✕</button></td>`;
