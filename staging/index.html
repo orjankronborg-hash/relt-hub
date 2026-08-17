@@ -582,6 +582,7 @@ async function doGoogleSignIn() {
     }
     window._googleCred = { idToken: result.credential.idToken, accessToken: result.credential.accessToken };
     document.getElementById('auth-gate').remove();
+    initFirebase();
   } catch (e) {
     if (e.code !== 'auth/popup-closed-by-user') {
       err.textContent = 'Sign-in failed. Please try again.';
@@ -2457,7 +2458,7 @@ async function initFirebase() {
   }
 }
 
-initFirebase();
+if (!document.getElementById('auth-gate')) initFirebase();
 
 if (!isSessionAdmin()) {
   const addBtn = document.getElementById('add-session-btn');
