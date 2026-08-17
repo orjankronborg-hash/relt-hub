@@ -1950,7 +1950,6 @@ function seedREMeetups() {
 function renderREMeetup() {
   const view = document.getElementById('remeetup-view');
   if (!S.reMeetups) S.reMeetups = [];
-  if (!S.reMeetups.length) seedREMeetups();
   const meetups = S.reMeetups;
 
   let html = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">';
@@ -2402,16 +2401,17 @@ async function initFirebase() {
       }
       if (remote.bizReviews) S.bizReviews = normalizeFbArray(remote.bizReviews);
       if (remote.reMeetups) S.reMeetups = normalizeFbArray(remote.reMeetups);
-      if (!S.reMeetups || !S.reMeetups.length) seedREMeetups();
       localStorage.setItem('relt26v2', JSON.stringify(S));
       open.clear();
       render();
-    
+
       showTab(currentTab);
     }
 
     _fbReady = true;
     setSyncStatus('☁ Connected ✓', 'synced');
+    if (!S.reMeetups || !S.reMeetups.length) seedREMeetups();
+    else if (!remote || !remote.reMeetups) { db.ref(DOC_ID + '/reMeetups').set(S.reMeetups); }
 
     db.ref(DOC_ID + '/sessions').on('value', snap => {
       if (!snap.val()) return;
