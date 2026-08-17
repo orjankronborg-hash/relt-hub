@@ -47,13 +47,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; f
 .session-date { font-weight: 700; font-size: 17px; min-width: 120px; outline: none; }
 .session-date.done { color: #999; text-decoration: line-through; }
 .session-date.cancelled { color: #c00; text-decoration: line-through; }
-.session-time-group { display: flex; align-items: center; gap: 4px; }
-.time-pick { background: white; border: 1px solid #ddd; border-radius: 5px; padding: 5px 8px; font-size: 14px; font-family: inherit; color: #333; cursor: pointer; }
-.time-pick:focus { outline: 2px solid #f0b800; border-color: #f0b800; }
-.time-sep { color: #555; font-size: 15px; padding: 0 2px; }
-.tz-pick { background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 5px 6px; font-size: 13px; color: #888; width: 55px; text-align: center; }
-.tz-pick:hover { border-color: #ddd; }
-.tz-pick:focus { outline: 2px solid #f0b800; border-color: #f0b800; background: #fffbea; color: #333; }
+.session-time { color: #555; font-size: 15px; outline: none; min-width: 110px; }
+.session-time-group { display: inline-flex; align-items: center; gap: 4px; }
+.time-pick { border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-size: 14px; font-family: inherit; color: #555; background: #fff; }
+.time-sep { color: #555; font-size: 15px; }
+.tz-pick { border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-size: 13px; font-family: inherit; color: #888; background: #fff; width: 50px; text-align: center; }
 .format-badge { padding: 3px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; border: none; outline: none; }
 .fmt-Digital { background: var(--teal); color: #1a4f5c; }
 .fmt-Physical { background: var(--pink); color: #8b0000; }
@@ -143,13 +141,25 @@ select.ii { cursor: pointer; }
 
 /* Consolidated session minutes */
 .session-mins-panel { background:#f8f9fc; border:1px solid #e8ebf0; border-radius:0 0 8px 8px; padding:16px 20px; margin-top:-1px; }
+.session-mins-panel h4, .gemini-notes-panel h4 { display:flex; align-items:center; justify-content:space-between; }
 .session-mins-panel h4 { font-size:13px; font-weight:800; color:var(--green); margin-bottom:10px; text-transform:uppercase; letter-spacing:.5px; }
+.panel-close { background:none; border:none; font-size:18px; color:#999; cursor:pointer; padding:0 4px; line-height:1; }
+.panel-close:hover { color:#333; }
 .smins-topic { margin-bottom:14px; }
 .smins-topic:last-child { margin-bottom:0; }
 .smins-topic-title { font-size:13px; font-weight:700; color:#444; margin-bottom:4px; display:flex; align-items:center; gap:6px; }
 .smins-topic-time { font-size:11px; color:#999; font-weight:400; }
 .smins-topic-body { font-size:14px; line-height:1.6; color:#333; white-space:pre-wrap; padding-left:12px; border-left:3px solid #e0e4ec; }
 .smins-empty { font-size:13px; color:#aaa; font-style:italic; }
+
+/* Gemini Notes panel */
+.gemini-notes-panel { background:#f8f7fc; border:1px solid #e0ddf0; border-radius:0 0 8px 8px; padding:16px 20px; margin-top:-1px; }
+.gemini-notes-panel h4 { font-size:13px; font-weight:800; color:#6b5ce7; margin-bottom:10px; text-transform:uppercase; letter-spacing:.5px; }
+.gemini-notes-body { min-height:120px; max-height:500px; overflow-y:auto; font-size:14px; line-height:1.6; color:#333; padding:12px 12px 12px 28px; background:#fff; border:1px solid #e0ddf0; border-radius:6px; outline:none; white-space:pre-wrap; }
+.gemini-notes-body:empty::before { content:attr(data-ph); color:#bbb; font-style:italic; pointer-events:none; }
+.gemini-notes-body:focus { border-color:#6b5ce7; box-shadow:0 0 0 2px rgba(107,92,231,.12); }
+.btn-purple { background:#6b5ce7; color:#fff; border-color:#6b5ce7; }
+.btn-purple:hover { background:#5a4bd6; }
 
 /* Holiday/separator */
 .holiday-row { background: linear-gradient(90deg, #fffde7, #f9fbe7); text-align: center; padding: 12px; color: #b8930a; font-style: italic; font-weight: 600; font-size: 15px; }
@@ -510,6 +520,8 @@ main.hidden { display: none; }
   .minutes-ea { min-height: 80px; }
   /* Session minutes panel */
   .session-mins-panel { padding: 10px 12px; }
+  .gemini-notes-panel { padding: 10px 12px; }
+  .gemini-notes-body { min-height: 80px; max-height: 300px; font-size: 13px; }
   /* Modal */
   .modal { padding: 16px; }
   .modal textarea { height: 180px; font-size: 11px; }
@@ -552,49 +564,6 @@ main.hidden { display: none; }
 </style>
 </head>
 <body>
-
-<div id="auth-gate" style="position:fixed;inset:0;background:linear-gradient(135deg,#7B2020,#4A1212);display:flex;align-items:center;justify-content:center;z-index:99999;color:white;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-  <div style="background:rgba(255,255,255,0.08);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:48px 40px;width:420px;max-width:95vw;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
-    <h1 style="font-size:36px;font-weight:800;margin-bottom:4px;letter-spacing:0.5px">RELT</h1>
-    <div style="font-size:16px;opacity:0.6;margin-bottom:8px">Management Hub</div>
-    <div style="font-size:12px;opacity:0.5;margin-bottom:32px;background:rgba(255,255,255,0.1);display:inline-block;padding:3px 12px;border-radius:10px">STAGING</div>
-    <button id="google-btn" onclick="doGoogleSignIn()" style="width:100%;padding:14px;border:none;border-radius:8px;background:white;color:#333;font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px;height:20px" alt="G">
-      Sign in with Google
-    </button>
-    <div id="google-error" style="color:#ff9999;font-size:14px;margin-top:12px;min-height:20px"></div>
-  </div>
-</div>
-<script>
-async function doGoogleSignIn() {
-  const btn = document.getElementById('google-btn');
-  const err = document.getElementById('google-error');
-  btn.disabled = true;
-  btn.style.opacity = '0.5';
-  err.textContent = '';
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ hd: '' });
-    const result = await firebase.auth().signInWithPopup(provider);
-    if (!result.user.email.endsWith('@m10s.io') && !result.user.email.endsWith('@vend.com')) {
-      await firebase.auth().signOut();
-      err.textContent = 'Access restricted to @m10s.io and @vend.com accounts.';
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      return;
-    }
-    window._googleCred = { idToken: result.credential.idToken, accessToken: result.credential.accessToken };
-    document.getElementById('auth-gate').remove();
-    initFirebase();
-  } catch (e) {
-    if (e.code !== 'auth/popup-closed-by-user') {
-      err.textContent = 'Sign-in failed. Please try again.';
-    }
-    btn.disabled = false;
-    btn.style.opacity = '1';
-  }
-}
-</script>
 
 <div class="app-container">
   <button type="button" class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open');document.querySelector('.sidebar-overlay').classList.toggle('open')">&#9776;</button>
@@ -803,10 +772,17 @@ async function doGoogleSignIn() {
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// FIREBASE CONFIG (initialized in <head>)
+// FIREBASE CONFIG
 // ═══════════════════════════════════════════════════════════════
+firebase.initializeApp({
+  apiKey: "AIzaSyCcrEbk9DBj2pBZK8Zd0pHjn03GzGQleyA",
+  databaseURL: "https://relt-hub-default-rtdb.europe-west1.firebasedatabase.app"
+});
 const db = firebase.database();
 const DOC_ID = 'relt-hub-v2';
 
@@ -918,6 +894,27 @@ function save() {
 }
 function uid() { return '_' + Math.random().toString(36).slice(2,9); }
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const SAFE_TAGS = ['B','STRONG','I','EM','U','BR','UL','OL','LI','P','DIV','SPAN','H1','H2','H3','H4','H5','H6','A'];
+function sanitizeHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  function clean(node) {
+    const children = [...node.childNodes];
+    for (const c of children) {
+      if (c.nodeType === 3) continue;
+      if (c.nodeType !== 1) { c.remove(); continue; }
+      if (!SAFE_TAGS.includes(c.tagName)) {
+        while (c.firstChild) c.parentNode.insertBefore(c.firstChild, c);
+        c.remove();
+      } else {
+        [...c.attributes].forEach(a => { if (a.name !== 'href') c.removeAttribute(a.name); });
+        clean(c);
+      }
+    }
+  }
+  clean(tmp);
+  return tmp.innerHTML;
+}
 
 // ── LINK CHIP HELPERS ─────────────────────────────────────────────
 const _lnkH = {};  // registry: wrapId → (url:string) => void
@@ -1017,7 +1014,7 @@ function reorderTopics(sid) {
   });
   if (s.topics.map(t => t.id).join(',') === before) return;
   const tb = document.getElementById('tb-' + sid);
-  if (tb) tb.innerHTML = s.topics.map(t => rowHtml(t, sid, s.format)).join('');
+  if (tb) tb.innerHTML = s.topics.map(t => rowHtml(t, sid)).join('');
   saveLocal();
 }
 
@@ -1101,7 +1098,6 @@ function tzHint(format) {
 }
 
 function renderSession(s) {
-  const pTime = parseSessionTime(s.time);
   const el = document.createElement('div');
   el.className = 'session';
   el.dataset.sid = s.id;
@@ -1111,6 +1107,7 @@ function renderSession(s) {
   }
   const fmtKey = s.format.startsWith('Physical') ? 'Physical' : 'Digital';
   const statusCls = s.status === 'done' ? 'done' : s.status === 'cancelled' ? 'cancelled' : '';
+  const pTime = parseSessionTime(s.time);
   el.innerHTML = `
     <div class="session-header">
       <span class="session-date ${statusCls}" contenteditable data-ce="date" data-sid="${s.id}">${esc(s.date)}</span>
@@ -1121,11 +1118,13 @@ function renderSession(s) {
       <span class="session-notes" contenteditable data-ce="notes" data-sid="${s.id}" data-ph="Session notes…">${esc(s.notes)}</span>
       <div class="session-actions">
         <button class="btn btn-sm" onclick="toggleSessionMins('${s.id}')" title="View all minutes">Minutes</button>
+        <button class="btn btn-sm btn-purple" onclick="toggleGeminiNotes('${s.id}')" title="Full meeting transcript">Gemini Notes</button>
         <button class="btn btn-sm btn-green" onclick="addTopic('${s.id}')">+ Add Topic</button>
         ${isSessionAdmin() ? `<button class="btn btn-sm btn-danger" onclick="delSession('${s.id}')">✕ Session</button>` : ''}
       </div>
     </div>
     <div class="session-mins-panel" id="smins-${s.id}" style="display:none"></div>
+    <div class="gemini-notes-panel" id="gnotes-${s.id}" style="display:none"></div>
     <table class="topics-table">
       <thead><tr>
         <th style="width:28px"></th>
@@ -1137,12 +1136,12 @@ function renderSession(s) {
         <th style="width:20%">Pre-read</th>
         <th style="width:28px"></th>
       </tr></thead>
-      <tbody id="tb-${s.id}">${s.topics.map(t=>rowHtml(t,s.id,s.format)).join('')}</tbody>
+      <tbody id="tb-${s.id}">${s.topics.map(t=>rowHtml(t,s.id)).join('')}</tbody>
     </table>`;
   return el;
 }
 
-function rowHtml(t, sid, fmt) {
+function rowHtml(t, sid) {
   const isBreak = t.type==='Break', isLunch = t.type==='Lunch';
   const rc = isBreak ? 'break-row' : isLunch ? 'lunch-row' : '';
   const d = dur(t.t0, t.t1);
@@ -1205,12 +1204,12 @@ function detailHtml(t, sid) {
       <div class="ds">
         <h4>Purpose</h4>
         <div class="ea" contenteditable data-ce="purpose" data-sid="${sid}" data-tid="${t.id}"
-             data-ph="Describe the purpose of this topic…">${esc(t.purpose)}</div>
+             data-ph="Describe the purpose of this topic…">${t.purpose||''}</div>
       </div>
       <div class="ds">
         <h4>Discussion Points</h4>
         <div class="ea" contenteditable data-ce="disc" data-sid="${sid}" data-tid="${t.id}"
-             data-ph="Key discussion points, questions to answer…">${esc(t.disc)}</div>
+             data-ph="Key discussion points, questions to answer…">${t.disc||''}</div>
       </div>
     </div>
     <div class="ds" style="margin-bottom:14px">
@@ -1228,7 +1227,7 @@ function detailHtml(t, sid) {
         <span class="minutes-hint">Paste meeting notes directly or use the button to read from clipboard</span>
       </div>
       <div class="ea minutes-ea" contenteditable data-ce="mins" data-sid="${sid}" data-tid="${t.id}"
-           data-ph="Meeting minutes and notes go here…">${esc(t.mins)}</div>
+           data-ph="Meeting minutes and notes go here…">${t.mins||''}</div>
     </div>
     ${t.type==='Decision' ? decisionPanelHtml(t,sid) : ''}
   </div>`;
@@ -1322,12 +1321,26 @@ function delPR(sid,tid,i) {
 
 async function pasteClip(sid,tid) {
   try {
-    const text = await navigator.clipboard.readText();
     const s=findS(sid), t=findT(s,tid); if(!t) return;
-    const sep = t.mins ? '\n\n' : '';
-    t.mins = (t.mins||'') + sep + text;
+    let html = '';
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        if (item.types.includes('text/html')) {
+          const blob = await item.getType('text/html');
+          html = sanitizeHtml(await blob.text());
+          break;
+        }
+      }
+    } catch(_) {}
+    if (!html) {
+      const text = await navigator.clipboard.readText();
+      html = esc(text).replace(/\n/g, '<br>');
+    }
+    const sep = t.mins ? '<br><br>' : '';
+    t.mins = (t.mins||'') + sep + html;
     const area = document.querySelector(`#dr-${tid} [data-ce="mins"]`);
-    if(area) area.innerText = t.mins;
+    if(area) area.innerHTML = t.mins;
     save();
   } catch(e) {
     alert('Clipboard access denied. Please paste directly into the minutes field (Ctrl+V / Cmd+V).');
@@ -1341,7 +1354,7 @@ function addTopic(sid) {
     decisionComment:'',nextSteps:'',responsible:'',decisionFinalized:false};
   s.topics.push(t);
   const tb=document.getElementById('tb-'+sid);
-  if(tb){ tb.insertAdjacentHTML('beforeend', rowHtml(t,sid,s.format)); }
+  if(tb){ tb.insertAdjacentHTML('beforeend', rowHtml(t,sid)); }
   setTimeout(()=>{
     const inp=document.querySelector(`[data-tid="${t.id}"] .ii-bold`);
     if(inp) inp.focus();
@@ -1387,21 +1400,33 @@ function toggleSessionMins(sid) {
   if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
   const s = findS(sid);
   if (!s || !s.topics || !s.topics.length) {
-    panel.innerHTML = '<div class="smins-empty">No topics in this session.</div>';
+    panel.innerHTML = `<h4>Session Minutes <button class="panel-close" onclick="this.closest('.session-mins-panel').style.display='none'" title="Close">✕</button></h4><div class="smins-empty">No topics in this session.</div>`;
     panel.style.display = 'block';
     return;
   }
   const topicsWithMins = s.topics.filter(t => t.mins && t.mins.trim());
   if (!topicsWithMins.length) {
-    panel.innerHTML = '<div class="smins-empty">No minutes recorded for this session yet.</div>';
+    panel.innerHTML = `<h4>Session Minutes <button class="panel-close" onclick="this.closest('.session-mins-panel').style.display='none'" title="Close">✕</button></h4><div class="smins-empty">No minutes recorded for this session yet.</div>`;
     panel.style.display = 'block';
     return;
   }
-  panel.innerHTML = '<h4>Session Minutes</h4>' + topicsWithMins.map(t => `
+  panel.innerHTML = `<h4>Session Minutes <button class="panel-close" onclick="this.closest('.session-mins-panel').style.display='none'" title="Close">✕</button></h4>` + topicsWithMins.map(t => `
     <div class="smins-topic">
       <div class="smins-topic-title">${esc(t.title||'Untitled')} <span class="smins-topic-time">${esc(t.t0||'')}${t.t0&&t.t1?' – ':''}${esc(t.t1||'')}</span></div>
-      <div class="smins-topic-body">${esc(t.mins)}</div>
+      <div class="smins-topic-body">${t.mins}</div>
     </div>`).join('');
+  panel.style.display = 'block';
+}
+
+function toggleGeminiNotes(sid) {
+  const panel = document.getElementById('gnotes-'+sid);
+  if (!panel) return;
+  if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+  const s = findS(sid);
+  if (!s) return;
+  if (!s.geminiNotes) s.geminiNotes = '';
+  panel.innerHTML = `<h4>Gemini Notes <button class="panel-close" onclick="this.closest('.gemini-notes-panel').style.display='none'" title="Close">✕</button></h4>
+    <div class="gemini-notes-body" contenteditable data-ce="geminiNotes" data-sid="${sid}" data-ph="Paste the full meeting transcript here…">${s.geminiNotes}</div>`;
   panel.style.display = 'block';
 }
 
@@ -1442,13 +1467,14 @@ function openDatePicker(sid, btn) {
   inp.showPicker();
 }
 
+const RICH_FIELDS = ['mins','purpose','disc','geminiNotes'];
 // Contenteditable field delegation
 document.addEventListener('input', e => {
   const el = e.target;
   const ce = el.dataset.ce;
   if (!ce) return;
   const sid = el.dataset.sid, tid = el.dataset.tid;
-  const val = el.innerText || el.textContent || '';
+  const val = RICH_FIELDS.includes(ce) ? sanitizeHtml(el.innerHTML) : (el.innerText || el.textContent || '');
   if (tid) {
     const s=findS(sid), t=findT(s,tid);
     if (t) {
@@ -1480,8 +1506,7 @@ document.addEventListener('input', e => {
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const el = e.target;
-  const richCe = ['mins','purpose','disc','geminiNotes'];
-  if (el.isContentEditable && richCe.includes(el.dataset.ce)) return;
+  if (el.isContentEditable && RICH_FIELDS.includes(el.dataset.ce)) return;
   if (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
     if (el.tagName !== 'TEXTAREA') e.preventDefault();
     save();
@@ -1940,7 +1965,7 @@ function setRMDeck(sid, url) {
 }
 
 function seedREMeetups() {
-  if (S.reMeetups && S.reMeetups.length > 0) return;
+  if (S.reMeetups && S.reMeetups.length) return;
   S.reMeetups = [
     'Thu 28 Aug','Fri 12 Sep','Thu 25 Sep','Thu 9 Oct','Thu 23 Oct','Thu 6 Nov','Thu 20 Nov','Thu 4 Dec','Thu 18 Dec'
   ].map(d => ({
@@ -1974,6 +1999,7 @@ function renderREMeetup() {
     html += `<input type="text" class="tz-pick" value="${esc(pTime.tz)}" placeholder="CET" onchange="setRMTime('${m.id}','tz',this.value)">`;
     html += `</div>`;
 
+    // Deck link
     if (m.deck) {
       html += `<div class="rm-deck"><span>📁</span><a href="${esc(m.deck)}" target="_blank">${esc(m.deckLabel||'Deck')}</a>`;
       html += `<button class="btn btn-sm" onclick="setRMDeck('${m.id}','');" style="font-size:10px;padding:1px 5px;">✕</button></div>`;
@@ -1982,16 +2008,19 @@ function renderREMeetup() {
     }
     html += `<a class="rm-folder-link" href="https://drive.google.com/drive/folders/1wmwOAiGzZf_pAIUKRzB6yJKtletbJlm2" target="_blank" rel="noopener">📂 Meetup Folder</a>`;
 
+    // Status
     html += `<select class="rm-status" style="margin-left:auto;background:${m.status==='done'?'#e8f5e9':m.status==='cancelled'?'#fce4ec':'#f5f5f5'}" onchange="updRM('${m.id}','status',this.value);renderREMeetup()">`;
     html += `<option value=""${!m.status?' selected':''}>Active</option>`;
     html += `<option value="done"${m.status==='done'?' selected':''}>Done</option>`;
     html += `<option value="cancelled"${m.status==='cancelled'?' selected':''}>Cancelled</option>`;
     html += `</select>`;
 
+    // Delete session
     html += `<button class="del-btn" style="opacity:1;font-size:16px;" onclick="delREMeetup('${m.id}')" title="Delete meetup">🗑</button>`;
 
-    html += `</div>`;
+    html += `</div>`; // end header
 
+    // Topics table
     html += `<table class="rm-table"><thead><tr>`;
     html += `<th style="width:22%">Theme</th>`;
     html += `<th style="width:32%">Details</th>`;
@@ -2012,12 +2041,14 @@ function renderREMeetup() {
       html += `</tr>`;
     }
 
+    // Total row
     html += `<tr><td colspan="4" style="text-align:right" class="rm-total">Total</td>`;
     html += `<td class="rm-total" id="rm-total-${m.id}">${total ? total + ' min' : ''}</td><td></td></tr>`;
     html += `</tbody></table>`;
 
+    // Add topic button
     html += `<div class="rm-actions"><button class="btn btn-sm btn-green" onclick="addRMTopic('${m.id}')">+ Add Topic</button></div>`;
-    html += `</div>`;
+    html += `</div>`; // end rm-session
   }
 
   view.innerHTML = html;
@@ -2408,13 +2439,13 @@ async function initFirebase() {
       localStorage.setItem('relt26v2', JSON.stringify(S));
       open.clear();
       render();
-
+    
       showTab(currentTab);
     }
 
     _fbReady = true;
     setSyncStatus('☁ Connected ✓', 'synced');
-    if (!S.reMeetups || !S.reMeetups.length) { seedREMeetups(); if (currentTab === 'remeetup') renderREMeetup(); }
+    if (!S.reMeetups || !S.reMeetups.length) seedREMeetups();
     else if (!remote || !remote.reMeetups) { db.ref(DOC_ID + '/reMeetups').set(S.reMeetups); }
 
     db.ref(DOC_ID + '/sessions').on('value', snap => {
@@ -2463,7 +2494,21 @@ async function initFirebase() {
   }
 }
 
-if (!document.getElementById('auth-gate')) initFirebase();
+async function authAndInit() {
+  if (window.GOOGLE_CREDENTIAL) {
+    try {
+      const cred = firebase.auth.GoogleAuthProvider.credential(
+        window.GOOGLE_CREDENTIAL.idToken,
+        window.GOOGLE_CREDENTIAL.accessToken
+      );
+      await firebase.auth().signInWithCredential(cred);
+    } catch (e) {
+      console.warn('Firebase auth failed, proceeding without auth:', e);
+    }
+  }
+  initFirebase();
+}
+authAndInit();
 
 if (!isSessionAdmin()) {
   const addBtn = document.getElementById('add-session-btn');
