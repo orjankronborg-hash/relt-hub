@@ -267,6 +267,8 @@ main.hidden { display: none; }
 .rm-deck a { color: #1155cc; text-decoration: none; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rm-deck-inp { border: 1px solid #ddd; border-radius: 4px; padding: 3px 6px; font-size: 12px; font-family: inherit; width: 180px; }
 .rm-deck-inp:focus { outline: none; border-color: var(--green); }
+.rm-folder-link { display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#1155cc;text-decoration:none;padding:3px 8px;border:1px solid #e0e0e0;border-radius:4px;background:#f8f9fa;white-space:nowrap; }
+.rm-folder-link:hover { background:#e8f0fe;border-color:#c4d7f5; }
 .rm-table { width: 100%; border-collapse: collapse; }
 .rm-table th { background: #fafafa; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #ebebeb; }
 .rm-table td { padding: 7px 10px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
@@ -608,7 +610,6 @@ async function doGoogleSignIn() {
         <a class="nav-item" data-tab="decisions" onclick="showTab('decisions')">Decision Log</a>
         <a class="nav-item" data-tab="remeetup" onclick="showTab('remeetup')">RE Meetup <span style="background:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);font-size:9px;padding:1px 6px;border-radius:4px;margin-left:4px;font-weight:700;letter-spacing:0.5px">BETA</span></a>
         <a class="nav-item nav-external" href="https://drive.google.com/drive/u/0/folders/1J89jbu9bH4yxM7eqc8JNa4NTzvwD0lIU" target="_blank" rel="noopener">RELT Drive Folder <span class="external-icon">&#8599;</span></a>
-        <a class="nav-item nav-external" href="https://drive.google.com/drive/folders/1wmwOAiGzZf_pAIUKRzB6yJKtletbJlm2" target="_blank" rel="noopener">RE Meetup Drive <span class="external-icon">&#8599;</span></a>
       </div>
       <div class="nav-group">
         <div class="nav-group-title">TRACKING</div>
@@ -1978,6 +1979,7 @@ function renderREMeetup() {
     } else {
       html += `<div class="rm-deck"><span>📁</span><input class="rm-deck-inp" type="url" placeholder="Paste deck link…" onkeydown="if(event.key==='Enter'){setRMDeck('${m.id}',this.value);}" onblur="if(this.value.trim())setRMDeck('${m.id}',this.value);"></div>`;
     }
+    html += `<a class="rm-folder-link" href="https://drive.google.com/drive/folders/1wmwOAiGzZf_pAIUKRzB6yJKtletbJlm2" target="_blank" rel="noopener">📂 Meetup Folder</a>`;
 
     html += `<select class="rm-status" style="margin-left:auto;background:${m.status==='done'?'#e8f5e9':m.status==='cancelled'?'#fce4ec':'#f5f5f5'}" onchange="updRM('${m.id}','status',this.value);renderREMeetup()">`;
     html += `<option value=""${!m.status?' selected':''}>Active</option>`;
