@@ -2410,9 +2410,8 @@ async function initFirebase() {
 
     _fbReady = true;
     setSyncStatus('☁ Connected ✓', 'synced');
-    console.log('[DEBUG] reMeetups before seed:', S.reMeetups ? S.reMeetups.length : 'undefined', 'remote:', remote && remote.reMeetups ? 'has data' : 'no data');
-    if (!S.reMeetups || !S.reMeetups.length) { seedREMeetups(); console.log('[DEBUG] seeded', S.reMeetups.length, 'meetups'); if (currentTab === 'remeetup') renderREMeetup(); }
-    else if (!remote || !remote.reMeetups) { db.ref(DOC_ID + '/reMeetups').set(S.reMeetups); console.log('[DEBUG] pushed local reMeetups to Firebase'); }
+    if (!S.reMeetups || !S.reMeetups.length) { seedREMeetups(); if (currentTab === 'remeetup') renderREMeetup(); }
+    else if (!remote || !remote.reMeetups) { db.ref(DOC_ID + '/reMeetups').set(S.reMeetups); }
 
     db.ref(DOC_ID + '/sessions').on('value', snap => {
       if (!snap.val()) return;
