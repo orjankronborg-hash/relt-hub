@@ -1935,9 +1935,21 @@ function setRMDeck(sid, url) {
   renderREMeetup();
 }
 
+function seedREMeetups() {
+  if (S.reMeetups && S.reMeetups.length) return;
+  S.reMeetups = [
+    'Thu 28 Aug','Fri 12 Sep','Thu 25 Sep','Thu 9 Oct','Thu 23 Oct','Thu 6 Nov','Thu 20 Nov','Thu 4 Dec','Thu 18 Dec'
+  ].map(d => ({
+    id: uid(), date: d, time: '09:00–09:45 CET', deck: '', deckLabel: '', status: '',
+    topics: [{ id: uid(), theme: '', details: '', owner: '', presenter: '', mins: 0 }]
+  }));
+  save();
+}
+
 function renderREMeetup() {
   const view = document.getElementById('remeetup-view');
   if (!S.reMeetups) S.reMeetups = [];
+  if (!S.reMeetups.length) seedREMeetups();
   const meetups = S.reMeetups;
 
   let html = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">';
