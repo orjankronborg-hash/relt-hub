@@ -1937,7 +1937,7 @@ function setRMDeck(sid, url) {
 }
 
 function seedREMeetups() {
-  if (S.reMeetups && S.reMeetups.length) return;
+  if (S.reMeetups && S.reMeetups.length > 0) return;
   S.reMeetups = [
     'Thu 28 Aug','Fri 12 Sep','Thu 25 Sep','Thu 9 Oct','Thu 23 Oct','Thu 6 Nov','Thu 20 Nov','Thu 4 Dec','Thu 18 Dec'
   ].map(d => ({
@@ -2402,6 +2402,7 @@ async function initFirebase() {
       }
       if (remote.bizReviews) S.bizReviews = normalizeFbArray(remote.bizReviews);
       if (remote.reMeetups) S.reMeetups = normalizeFbArray(remote.reMeetups);
+      if (!S.reMeetups || !S.reMeetups.length) seedREMeetups();
       localStorage.setItem('relt26v2', JSON.stringify(S));
       open.clear();
       render();
