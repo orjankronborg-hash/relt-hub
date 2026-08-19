@@ -67,11 +67,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; f
 
 /* Table */
 .topics-scroll { overflow-x: auto; }
-.topics-table { width: calc(100% * var(--tzoom, 1)); min-width: 100%; border-collapse: collapse; table-layout: fixed; }
-#agenda-zoom-wrap { display: flex; align-items: center; gap: 7px; margin-left: auto; }
-#agenda-zoom-wrap label { font-size: 11px; color: #888; font-weight: 600; white-space: nowrap; }
-#agenda-zoom { width: 130px; cursor: pointer; accent-color: #7B2020; }
-.topics-table th { background: #fafafa; padding: 8px 10px; text-align: left; font-size: 13px; font-weight: 700; color: #777; border-bottom: 2px solid #ebebeb; white-space: nowrap; }
+.topics-table { width: auto; min-width: 100%; border-collapse: collapse; table-layout: fixed; }
+.col-resizer { position: absolute; top: 0; right: 0; width: 8px; height: 100%; cursor: col-resize; -webkit-user-select: none; user-select: none; z-index: 3; }
+.col-resizer:hover { background: #d4a4a4; }
+.col-resizer.dragging { background: #7B2020; }
+.topics-table th { background: #fafafa; padding: 8px 10px; text-align: left; font-size: 13px; font-weight: 700; color: #777; border-bottom: 2px solid #ebebeb; white-space: nowrap; position: relative; }
 .topics-table td { padding: 7px 10px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; overflow: visible; }
 .topic-row:hover > td { background: #fafcff; }
 .break-row > td { background: #f6fcf0; }
@@ -626,10 +626,7 @@ main.hidden { display: none; }
         <span style="font-size:11px;color:#888;font-weight:600">Sort:</span>
         <button class="btn btn-sm" id="sort-btn" onclick="toggleAgendaSort()" style="font-size:11px">&#8593; Upcoming first</button>
         <button class="btn btn-sm btn-green" id="add-session-btn" onclick="addSession()">+ Add Session</button>
-        <div id="agenda-zoom-wrap">
-          <label for="agenda-zoom">Column width</label>
-          <input type="range" id="agenda-zoom" min="100" max="220" value="100" oninput="setAgendaZoom(this.value)" title="Drag to widen columns and reveal full text">
-        </div>
+        <button class="btn btn-sm" onclick="resetColWidths()" style="font-size:11px;margin-left:auto" title="Reset all column widths to default">↔ Reset columns</button>
       </div>
 
       <main id="main"></main>
@@ -1111,11 +1108,56 @@ function render() {
   sessions.forEach(s => m.appendChild(renderSession(s)));
 }
 
-function setAgendaZoom(v) {
-  const z = (parseInt(v) || 100) / 100;
+const COL_DEFAULTS = { topic: 320, owner: 150, pres: 150, type: 110, time: 130, preread: 220 };
+
+function startColResize(e, col) {
+  e.preventDefault();
+  e.stopPropagation();
+  const handle = e.target;
+  handle.classList.add('dragging');
   const m = document.getElementById('main');
-  if (m) m.style.setProperty('--tzoom', z);
-  try { localStorage.setItem('reltAgendaZoom', v); } catch (e) {}
+  const startX = e.clientX;
+  const cur = getComputedStyle(m).getPropertyValue('--col-' + col);
+  const startW = parseInt(cur) || COL_DEFAULTS[col] || 150;
+  function onMove(ev) {
+    const w = Math.max(60, startW + (ev.clientX - startX));
+    m.style.setProperty('--col-' + col, w + 'px');
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    handle.classList.remove('dragging');
+    saveColWidths();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function saveColWidths() {
+  const m = document.getElementById('main');
+  const out = {};
+  for (const col of Object.keys(COL_DEFAULTS)) {
+    const v = m.style.getPropertyValue('--col-' + col);
+    if (v) out[col] = v.trim();
+  }
+  try { localStorage.setItem('reltColWidths', JSON.stringify(out)); } catch (e) {}
+}
+
+function restoreColWidths() {
+  const m = document.getElementById('main');
+  if (!m) return;
+  try {
+    const raw = localStorage.getItem('reltColWidths');
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    for (const col of Object.keys(saved)) m.style.setProperty('--col-' + col, saved[col]);
+  } catch (e) {}
+}
+
+function resetColWidths() {
+  const m = document.getElementById('main');
+  for (const col of Object.keys(COL_DEFAULTS)) m.style.removeProperty('--col-' + col);
+  try { localStorage.removeItem('reltColWidths'); } catch (e) {}
 }
 
 function toggleAgendaSort() {
@@ -1162,15 +1204,25 @@ function renderSession(s) {
     <div class="gemini-notes-panel" id="gnotes-${s.id}" style="display:none"></div>
     <div class="topics-scroll">
     <table class="topics-table">
+      <colgroup>
+        <col style="width:28px">
+        <col style="width:var(--col-topic,320px)">
+        <col style="width:var(--col-owner,150px)">
+        <col style="width:var(--col-pres,150px)">
+        <col style="width:var(--col-type,110px)">
+        <col style="width:var(--col-time,130px)">
+        <col style="width:var(--col-preread,220px)">
+        <col style="width:28px">
+      </colgroup>
       <thead><tr>
-        <th style="width:28px"></th>
-        <th style="width:28%">Topic</th>
-        <th style="width:13%">Owner</th>
-        <th style="width:13%">Presenter(s)</th>
-        <th style="width:10%">Type</th>
-        <th style="width:12%">Time</th>
-        <th style="width:20%">Pre-read</th>
-        <th style="width:28px"></th>
+        <th></th>
+        <th>Topic<span class="col-resizer" onmousedown="startColResize(event,'topic')"></span></th>
+        <th>Owner<span class="col-resizer" onmousedown="startColResize(event,'owner')"></span></th>
+        <th>Presenter(s)<span class="col-resizer" onmousedown="startColResize(event,'pres')"></span></th>
+        <th>Type<span class="col-resizer" onmousedown="startColResize(event,'type')"></span></th>
+        <th>Time<span class="col-resizer" onmousedown="startColResize(event,'time')"></span></th>
+        <th>Pre-read<span class="col-resizer" onmousedown="startColResize(event,'preread')"></span></th>
+        <th></th>
       </tr></thead>
       <tbody id="tb-${s.id}">${s.topics.map(t=>rowHtml(t,s.id)).join('')}</tbody>
     </table>
@@ -2552,17 +2604,8 @@ if (!isSessionAdmin()) {
   if (addBtn) addBtn.style.display = 'none';
 }
 
-// Restore saved agenda column-width zoom
-(function () {
-  try {
-    const z = localStorage.getItem('reltAgendaZoom');
-    if (z) {
-      const el = document.getElementById('agenda-zoom');
-      if (el) el.value = z;
-      setAgendaZoom(z);
-    }
-  } catch (e) {}
-})();
+// Restore saved per-column widths
+restoreColWidths();
 
 // ═══════════════════════════════════════════════════════════════
 // GUIDED TOUR
