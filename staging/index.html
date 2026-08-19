@@ -1807,7 +1807,7 @@ function dlCardHtml(d, sessionDate, isLegacy) {
   ).join('');
 
   const footer = isLegacy
-    ? `<span class="legacy-tag">Historical — RELT Decision Log</span>`
+    ? `<span class="legacy-tag">Historical — RELT Decision Log</span><button class="btn btn-sm btn-danger" style="margin-left:auto" onclick="delLegacyDecision('${d.id}')" title="Delete this historical decision">🗑</button>`
     : `<span class="agenda-link" onclick="goToAgendaTopic('${d.sid}','${d.id}')">View in agenda ↗</span>`;
 
   const notifyBtn = !isLegacy
@@ -1918,6 +1918,15 @@ function setLegacyStatus(id, status, chipEl) {
   d.decisionStatus = status;
   _updateDLCardVisuals(id, status, chipEl);
   save();
+}
+
+function delLegacyDecision(id) {
+  const d = S.legacyDecisions.find(d=>d.id===id);
+  const name = (d && (d.theme||d.title)) ? (d.theme||d.title) : 'this historical decision';
+  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+  S.legacyDecisions = S.legacyDecisions.filter(d=>d.id!==id);
+  save();
+  renderDecisionLog();
 }
 
 function _updateDLCardVisuals(id, status, anyChipInCard) {
