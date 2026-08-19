@@ -278,8 +278,8 @@ main.hidden { display: none; }
 .rm-deck-inp:focus { outline: none; border-color: var(--green); }
 .rm-folder-link { display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#1155cc;text-decoration:none;padding:3px 8px;border:1px solid #e0e0e0;border-radius:4px;background:#f8f9fa;white-space:nowrap; }
 .rm-folder-link:hover { background:#e8f0fe;border-color:#c4d7f5; }
-.rm-table { width: 100%; border-collapse: collapse; }
-.rm-table th { background: #fafafa; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #ebebeb; }
+.rm-table { width: auto; min-width: 100%; border-collapse: collapse; table-layout: fixed; }
+.rm-table th { background: #fafafa; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #ebebeb; position: relative; }
 .rm-table td { padding: 7px 10px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
 .rm-table .ii { background: transparent; border: none; font-size: 14px; font-family: inherit; width: 100%; padding: 2px 3px; }
 .rm-table .ii:focus { background: #fffbea; outline: 2px solid #f0b800; border-radius: 2px; }
@@ -1144,20 +1144,23 @@ function render() {
   sessions.forEach(s => m.appendChild(renderSession(s)));
 }
 
-const COL_DEFAULTS = { topic: 320, owner: 150, pres: 150, type: 110, time: 130, preread: 220 };
+const COL_DEFAULTS = {
+  topic: 320, owner: 150, pres: 150, type: 110, time: 130, preread: 220,
+  rmtheme: 200, rmdetails: 320, rmowner: 170, rmpres: 140
+};
 
 function startColResize(e, col) {
   e.preventDefault();
   e.stopPropagation();
   const handle = e.target;
   handle.classList.add('dragging');
-  const m = document.getElementById('main');
+  const root = document.documentElement;
   const startX = e.clientX;
-  const cur = getComputedStyle(m).getPropertyValue('--col-' + col);
+  const cur = getComputedStyle(root).getPropertyValue('--col-' + col);
   const startW = parseInt(cur) || COL_DEFAULTS[col] || 150;
   function onMove(ev) {
     const w = Math.max(60, startW + (ev.clientX - startX));
-    m.style.setProperty('--col-' + col, w + 'px');
+    root.style.setProperty('--col-' + col, w + 'px');
   }
   function onUp() {
     document.removeEventListener('mousemove', onMove);
@@ -1170,30 +1173,31 @@ function startColResize(e, col) {
 }
 
 function saveColWidths() {
-  const m = document.getElementById('main');
+  const root = document.documentElement;
   const out = {};
   for (const col of Object.keys(COL_DEFAULTS)) {
-    const v = m.style.getPropertyValue('--col-' + col);
+    const v = root.style.getPropertyValue('--col-' + col);
     if (v) out[col] = v.trim();
   }
   try { localStorage.setItem('reltColWidths', JSON.stringify(out)); } catch (e) {}
 }
 
 function restoreColWidths() {
-  const m = document.getElementById('main');
-  if (!m) return;
+  const root = document.documentElement;
   try {
     const raw = localStorage.getItem('reltColWidths');
     if (!raw) return;
     const saved = JSON.parse(raw);
-    for (const col of Object.keys(saved)) m.style.setProperty('--col-' + col, saved[col]);
+    for (const col of Object.keys(saved)) root.style.setProperty('--col-' + col, saved[col]);
   } catch (e) {}
 }
 
 function resetColWidths() {
-  const m = document.getElementById('main');
-  for (const col of Object.keys(COL_DEFAULTS)) m.style.removeProperty('--col-' + col);
+  const root = document.documentElement;
+  for (const col of Object.keys(COL_DEFAULTS)) root.style.removeProperty('--col-' + col);
   try { localStorage.removeItem('reltColWidths'); } catch (e) {}
+  render();
+  if (currentTab === 'remeetup') renderREMeetup();
 }
 
 function toggleAgendaSort() {
@@ -1257,7 +1261,7 @@ function renderSession(s) {
         <th>Presenter(s)<span class="col-resizer" onmousedown="startColResize(event,'pres')"></span></th>
         <th>Type<span class="col-resizer" onmousedown="startColResize(event,'type')"></span></th>
         <th>Time<span class="col-resizer" onmousedown="startColResize(event,'time')"></span></th>
-        <th>Pre-read<span class="col-resizer" onmousedown="startColResize(event,'preread')"></span></th>
+        <th>Pre-read</th>
         <th></th>
       </tr></thead>
       <tbody id="tb-${s.id}">${s.topics.map(t=>rowHtml(t,s.id)).join('')}</tbody>
@@ -2107,6 +2111,7 @@ function renderREMeetup() {
 
   let html = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">';
   html += '<button class="btn btn-sm btn-green" onclick="addREMeetup()">+ Add Meetup</button>';
+  html += '<button class="btn btn-sm" onclick="resetColWidths()" style="font-size:11px;margin-left:auto" title="Reset all column widths to default">↔ Reset columns</button>';
   html += '</div>';
 
   for (const m of meetups) {
@@ -2146,13 +2151,23 @@ function renderREMeetup() {
     html += `</div>`; // end header
 
     // Topics table
-    html += `<table class="rm-table"><thead><tr>`;
-    html += `<th style="width:22%">Theme</th>`;
-    html += `<th style="width:32%">Details</th>`;
-    html += `<th style="width:18%">Owner</th>`;
-    html += `<th style="width:14%">Presenter</th>`;
-    html += `<th style="width:8%">Min</th>`;
-    html += `<th style="width:6%"></th>`;
+    html += `<div class="topics-scroll">`;
+    html += `<table class="rm-table">`;
+    html += `<colgroup>`;
+    html += `<col style="width:var(--col-rmtheme,200px)">`;
+    html += `<col style="width:var(--col-rmdetails,320px)">`;
+    html += `<col style="width:var(--col-rmowner,170px)">`;
+    html += `<col style="width:var(--col-rmpres,140px)">`;
+    html += `<col style="width:70px">`;
+    html += `<col style="width:36px">`;
+    html += `</colgroup>`;
+    html += `<thead><tr>`;
+    html += `<th>Theme<span class="col-resizer" onmousedown="startColResize(event,'rmtheme')"></span></th>`;
+    html += `<th>Details<span class="col-resizer" onmousedown="startColResize(event,'rmdetails')"></span></th>`;
+    html += `<th>Owner<span class="col-resizer" onmousedown="startColResize(event,'rmowner')"></span></th>`;
+    html += `<th>Presenter<span class="col-resizer" onmousedown="startColResize(event,'rmpres')"></span></th>`;
+    html += `<th>Min</th>`;
+    html += `<th></th>`;
     html += `</tr></thead><tbody>`;
 
     for (const t of m.topics) {
@@ -2170,6 +2185,7 @@ function renderREMeetup() {
     html += `<tr><td colspan="4" style="text-align:right" class="rm-total">Total</td>`;
     html += `<td class="rm-total" id="rm-total-${m.id}">${total ? total + ' min' : ''}</td><td></td></tr>`;
     html += `</tbody></table>`;
+    html += `</div>`; // end topics-scroll
 
     // Add topic button
     html += `<div class="rm-actions"><button class="btn btn-sm btn-green" onclick="addRMTopic('${m.id}')">+ Add Topic</button></div>`;
