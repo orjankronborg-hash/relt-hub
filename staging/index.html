@@ -5,16 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RELT — Staging</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 3L2 15h4v12h8v-8h4v8h8V15h4L16 3z' fill='%237B2020'/></svg>">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script>
-firebase.initializeApp({
-  apiKey: "AIzaSyCcrEbk9DBj2pBZK8Zd0pHjn03GzGQleyA",
-  authDomain: "relt-hub.firebaseapp.com",
-  databaseURL: "https://relt-hub-default-rtdb.europe-west1.firebasedatabase.app"
-});
-</script>
 <style>
 :root {
   --green: #7B2020; --dark-red: #7a2822;
@@ -833,6 +823,7 @@ async function doGoogleSignIn() {
 // ═══════════════════════════════════════════════════════════════
 firebase.initializeApp({
   apiKey: "AIzaSyCcrEbk9DBj2pBZK8Zd0pHjn03GzGQleyA",
+  authDomain: "relt-hub.firebaseapp.com",
   databaseURL: "https://relt-hub-default-rtdb.europe-west1.firebasedatabase.app"
 });
 const db = firebase.database();
