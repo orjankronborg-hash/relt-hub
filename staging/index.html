@@ -606,8 +606,9 @@ async function doGoogleSignIn() {
     document.getElementById('auth-gate').remove();
     initFirebase();
   } catch (e) {
+    console.error('Google sign-in error:', e);
     if (e.code !== 'auth/popup-closed-by-user') {
-      err.textContent = 'Sign-in failed. Please try again.';
+      err.textContent = 'Sign-in failed: ' + (e.code || e.message || 'unknown error');
     }
     btn.disabled = false;
     btn.style.opacity = '1';
