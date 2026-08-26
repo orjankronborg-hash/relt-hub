@@ -290,6 +290,34 @@ main.hidden { display: none; }
 .rm-actions { padding: 10px 18px; display: flex; gap: 8px; }
 .rm-status { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; }
 
+/* STI TARGETS VIEW */
+.sti-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.sti-toolbar h2 { font-size: 20px; font-weight: 700; flex: 1; margin: 0; }
+.sti-controls { display: flex; align-items: center; gap: 10px; }
+.sti-controls select { border: 1px solid #ddd; border-radius: 5px; padding: 6px 10px; font-size: 14px; background: white; }
+.sti-table-wrap { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.sti-table { width: 100%; border-collapse: collapse; }
+.sti-table thead { background: #7B2020; color: white; }
+.sti-table th { padding: 12px 14px; text-align: left; font-size: 13px; font-weight: 700; border-right: 1px solid rgba(255,255,255,0.15); }
+.sti-table th:last-child { border-right: none; }
+.sti-table tbody tr { background: #e8f4f8; border-bottom: 2px solid white; }
+.sti-table tbody tr:hover { background: #d8eaf2; }
+.sti-table td { padding: 10px 14px; font-size: 14px; border-right: 1px solid rgba(0,0,0,0.05); }
+.sti-table td:last-child { border-right: none; }
+.sti-table .sti-desc-col { font-weight: 500; color: #1f1f1f; }
+.sti-table .sti-num-col { text-align: center; background: #d0d0d0; }
+.sti-table .sti-pct-col { text-align: center; font-weight: 600; }
+.sti-table .sti-achievement { font-weight: 700; font-size: 15px; }
+.sti-table .sti-achievement.ach-100 { color: #11734b; }
+.sti-table .sti-achievement.ach-70 { color: #f57c00; }
+.sti-table .sti-achievement.ach-low { color: #c62828; }
+.sti-table tfoot { background: #7B2020; color: white; font-weight: 700; font-size: 16px; }
+.sti-table tfoot td { padding: 14px; text-align: right; }
+.sti-table .sti-input { background: transparent; border: 1px solid transparent; padding: 4px 6px; width: 100%; text-align: center; font-size: 14px; font-family: inherit; border-radius: 3px; }
+.sti-table .sti-input:hover { background: rgba(255,255,255,0.5); border-color: #ddd; }
+.sti-table .sti-input:focus { background: white; border-color: #7B2020; outline: none; box-shadow: 0 0 0 2px rgba(123,32,32,0.15); }
+.sti-empty { text-align: center; color: #aaa; font-style: italic; padding: 60px 20px; background: white; border-radius: 10px; }
+
 /* FINANCIAL VIEW */
 .fin-ltp-card { background:white; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.1); padding:16px 20px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; align-items:start; }
 @media(max-width:800px) { .fin-ltp-card { grid-template-columns:1fr; } }
@@ -638,6 +666,7 @@ async function doGoogleSignIn() {
       <div class="nav-group">
         <div class="nav-group-title">TEAM</div>
         <a class="nav-item" data-tab="charter" onclick="showTab('charter')">Team Principles <span class="nav-badge" style="background:rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);font-size:9px;padding:1px 6px;border-radius:4px;margin-left:4px;font-weight:700;letter-spacing:0.5px">BETA</span></a>
+        <a class="nav-item" data-tab="sti" onclick="showTab('sti')">STI Targets</a>
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -796,6 +825,21 @@ async function doGoogleSignIn() {
 
       <div id="remeetup-view" class="hub-view"></div>
 
+      <!-- STI Targets View -->
+      <div id="sti-view" class="hub-view">
+        <div class="sti-toolbar">
+          <h2>STI Targets 2026</h2>
+          <div class="sti-controls">
+            <label for="sti-month-filter" style="font-size:13px;color:#555;font-weight:600">Viewing:</label>
+            <select id="sti-month-filter" onchange="renderSTI()">
+              <option value="">Select month...</option>
+            </select>
+            <button class="btn btn-sm btn-green" onclick="addSTIMonth()">+ Add Month</button>
+          </div>
+        </div>
+        <div id="sti-content"></div>
+      </div>
+
       <!-- Notification Modal -->
       <div class="modal-overlay" id="notify-modal">
         <div class="modal">
@@ -932,6 +976,7 @@ function save() {
     db.ref(DOC_ID + '/bizReviews').set(S.bizReviews || []);
     db.ref(DOC_ID + '/financials').set(S.financials);
     db.ref(DOC_ID + '/reMeetups').set(S.reMeetups || []);
+    db.ref(DOC_ID + '/stiMonths').set(S.stiMonths || []);
     db.ref(DOC_ID + '/meta/lastUpdated').set(Date.now());
   }
   document.getElementById('ss').textContent = 'All changes saved ✓';
@@ -1736,7 +1781,7 @@ function showTab(tab) {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
   // Update breadcrumb
-  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', remeetup: 'RE Meetup', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Team Principles'};
+  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', remeetup: 'RE Meetup', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Team Principles', sti: 'STI Targets'};
   const bc = document.getElementById('breadcrumb-view');
   if (bc) bc.textContent = names[tab] || tab;
   // Toggle views
@@ -1747,11 +1792,13 @@ function showTab(tab) {
   document.getElementById('financial-view').style.display = tab === 'financial' ? 'block' : 'none';
   document.getElementById('remeetup-view').style.display = tab === 'remeetup' ? 'block' : 'none';
   document.getElementById('charter-view').style.display = tab === 'charter' ? 'block' : 'none';
+  document.getElementById('sti-view').style.display = tab === 'sti' ? 'block' : 'none';
   // Render active view
   if (tab === 'decisions') renderDecisionLog();
   if (tab === 'remeetup') renderREMeetup();
   if (tab === 'bizreview') renderBizReviews();
   if (tab === 'financial') renderFinancials();
+  if (tab === 'sti') renderSTI();
 }
 
 
@@ -2330,6 +2377,163 @@ function delBR(id) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// STI TARGETS
+// ═══════════════════════════════════════════════════════════════
+if (!S.stiMonths) S.stiMonths = [];
+
+function seedSTIData() {
+  S.stiMonths = [
+    {
+      id: 'may2026',
+      month: 'May 2026',
+      targets: {
+        'revenue': {actEst: '1519', achievement: '100'},
+        'margin': {actEst: '648', achievement: '100'},
+        'aurora-transition': {actEst: 'June 30th', achievement: '100'},
+        'aurora-healthy': {actEst: '3', achievement: '100'},
+        'ai-impact': {actEst: 'N/A', achievement: '70'},
+        'ai-maus': {actEst: '15%', achievement: '40'}
+      }
+    },
+    {
+      id: 'july2026',
+      month: 'July 2026',
+      targets: {
+        'revenue': {actEst: '1518', achievement: '100'},
+        'margin': {actEst: '625', achievement: '100'},
+        'aurora-transition': {actEst: 'N/A', achievement: '0'},
+        'aurora-healthy': {actEst: 'N/A', achievement: '0'},
+        'ai-impact': {actEst: 'N/A', achievement: '0'},
+        'ai-maus': {actEst: 'N/A', achievement: '0'}
+      }
+    }
+  ];
+}
+
+const STI_TARGETS = [
+  {id: 'revenue', desc: 'Real Estate Revenue, mNOK (constant currency)', target: 1514, threshold: 1447, weight: 20, type: 'number'},
+  {id: 'margin', desc: 'Real Estate EBITDA-CAPEX Margin, mNOK (cc)', target: 609, threshold: 563, weight: 30, type: 'number'},
+  {id: 'aurora-transition', desc: 'Transition: FINN runs 100% on Aurora by end of Q2', target: 'June 30th', threshold: '', weight: 10, type: 'milestone'},
+  {id: 'aurora-healthy', desc: 'Transition: FINN is healthy on Aurora', target: 3, threshold: 2, weight: 10, type: 'number'},
+  {id: 'ai-impact', desc: 'Win with AI: Deliver measurable business impact', target: '', threshold: '', weight: 15, type: 'text'},
+  {id: 'ai-maus', desc: 'Win with AI: % MAUs using AI-driven discovery', target: '20%', threshold: '15%', weight: 15, type: 'percentage'}
+];
+
+function renderSTI() {
+  const monthFilter = document.getElementById('sti-month-filter');
+  const content = document.getElementById('sti-content');
+  if (!monthFilter || !content) return;
+
+  // Populate month dropdown
+  monthFilter.innerHTML = '<option value="">Select month...</option>' +
+    S.stiMonths.map(m => `<option value="${m.id}">${esc(m.month)}</option>`).join('');
+
+  // Get selected month
+  const selectedId = monthFilter.value;
+  const selectedMonth = S.stiMonths.find(m => m.id === selectedId);
+
+  if (!selectedMonth) {
+    content.innerHTML = '<div class="sti-empty">No month selected. Click "+ Add Month" to create a tracking entry.</div>';
+    return;
+  }
+
+  // Calculate total weighted achievement
+  let totalWeighted = 0;
+  let totalWeight = 0;
+  STI_TARGETS.forEach(t => {
+    const data = selectedMonth.targets[t.id];
+    if (data && data.achievement !== null && data.achievement !== '') {
+      const ach = parseFloat(data.achievement) || 0;
+      totalWeighted += (ach / 100) * t.weight;
+      totalWeight += t.weight;
+    }
+  });
+  const totalAchievement = totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 100) : 0;
+
+  // Render table
+  content.innerHTML = `
+    <div class="sti-table-wrap">
+      <table class="sti-table">
+        <thead>
+          <tr>
+            <th>Target Description</th>
+            <th>Target</th>
+            <th>Threshold</th>
+            <th>Weight</th>
+            <th>Act/Est</th>
+            <th>Achievement</th>
+            <th>Weighted Achievement</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${STI_TARGETS.map(t => {
+            const data = selectedMonth.targets[t.id] || {actEst: '', achievement: ''};
+            const achNum = parseFloat(data.achievement) || 0;
+            const achClass = achNum >= 100 ? 'ach-100' : achNum >= 70 ? 'ach-70' : 'ach-low';
+            const weighted = achNum > 0 ? Math.round((achNum / 100) * t.weight) : 0;
+            return `<tr>
+              <td class="sti-desc-col">${esc(t.desc)}</td>
+              <td class="sti-num-col">${esc(String(t.target))}</td>
+              <td class="sti-num-col">${esc(String(t.threshold))}</td>
+              <td class="sti-pct-col">${t.weight}%</td>
+              <td class="sti-num-col">
+                <input type="text" class="sti-input" value="${esc(data.actEst)}"
+                       placeholder="N/A"
+                       oninput="updSTI('${selectedMonth.id}','${t.id}','actEst',this.value)">
+              </td>
+              <td class="sti-num-col">
+                <input type="text" class="sti-input sti-achievement ${achClass}"
+                       value="${esc(data.achievement)}"
+                       placeholder="0%"
+                       oninput="updSTI('${selectedMonth.id}','${t.id}','achievement',this.value);renderSTI()">
+              </td>
+              <td class="sti-pct-col">${weighted}%</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="6">TOTAL TARGET ACHIEVEMENT :</td>
+            <td>${totalAchievement}%</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
+}
+
+function addSTIMonth() {
+  const month = prompt('Enter month (e.g., "May 2026", "July 2026"):');
+  if (!month || !month.trim()) return;
+
+  const newMonth = {
+    id: uid(),
+    month: month.trim(),
+    targets: {}
+  };
+
+  // Initialize all targets
+  STI_TARGETS.forEach(t => {
+    newMonth.targets[t.id] = {actEst: '', achievement: ''};
+  });
+
+  S.stiMonths.push(newMonth);
+  save();
+
+  // Select the new month
+  document.getElementById('sti-month-filter').value = newMonth.id;
+  renderSTI();
+}
+
+function updSTI(monthId, targetId, field, value) {
+  const month = S.stiMonths.find(m => m.id === monthId);
+  if (!month) return;
+  if (!month.targets[targetId]) month.targets[targetId] = {actEst: '', achievement: ''};
+  month.targets[targetId][field] = value;
+  saveLocal();
+}
+
+// ═══════════════════════════════════════════════════════════════
 // FINANCIAL DOCUMENTS
 // ═══════════════════════════════════════════════════════════════
 const DEFAULT_FINANCIALS = {
@@ -2382,6 +2586,7 @@ document.getElementById('bizreview-view').style.display = 'none';
 document.getElementById('financial-view').style.display = 'none';
 document.getElementById('remeetup-view').style.display = 'none';
 document.getElementById('charter-view').style.display = 'none';
+document.getElementById('sti-view').style.display = 'none';
 
 // ═══════════════════════════════════════════════════════════════
 // FINANCIAL RENDER + ACTIONS
@@ -2575,6 +2780,7 @@ async function initFirebase() {
       await db.ref(DOC_ID + '/financials').set(S.financials);
       await db.ref(DOC_ID + '/bizReviews').set(S.bizReviews || []);
       await db.ref(DOC_ID + '/reMeetups').set(S.reMeetups || []);
+      await db.ref(DOC_ID + '/stiMonths').set(S.stiMonths || []);
       await db.ref(DOC_ID + '/meta/lastUpdated').set(Date.now());
     } else {
       S.sessions = normalizeFbData(remote.sessions);
@@ -2586,6 +2792,7 @@ async function initFirebase() {
       }
       if (remote.bizReviews) S.bizReviews = normalizeFbArray(remote.bizReviews);
       if (remote.reMeetups) S.reMeetups = normalizeFbArray(remote.reMeetups);
+      if (remote.stiMonths) S.stiMonths = normalizeFbArray(remote.stiMonths);
       localStorage.setItem('relt26v2', JSON.stringify(S));
       open.clear();
       render();
@@ -2597,6 +2804,8 @@ async function initFirebase() {
     setSyncStatus('☁ Connected ✓', 'synced');
     if (!S.reMeetups || !S.reMeetups.length) seedREMeetups();
     else if (!remote || !remote.reMeetups) { db.ref(DOC_ID + '/reMeetups').set(S.reMeetups); }
+    if (!S.stiMonths || !S.stiMonths.length) { seedSTIData(); save(); }
+    else if (!remote || !remote.stiMonths) { db.ref(DOC_ID + '/stiMonths').set(S.stiMonths); }
 
     db.ref(DOC_ID + '/sessions').on('value', snap => {
       if (!snap.val()) return;
@@ -2637,6 +2846,13 @@ async function initFirebase() {
       if (!isEditing() && currentTab === 'remeetup') renderREMeetup();
     });
 
+    db.ref(DOC_ID + '/stiMonths').on('value', snap => {
+      if (!snap.val()) return;
+      S.stiMonths = normalizeFbArray(snap.val());
+      localStorage.setItem('relt26v2', JSON.stringify(S));
+      if (!isEditing() && currentTab === 'sti') renderSTI();
+    });
+
   } catch (e) {
     console.warn('Firebase init failed, using localStorage:', e);
     setSyncStatus('⚠ Offline', 'offline');
@@ -2644,6 +2860,20 @@ async function initFirebase() {
   }
 }
 
+async function authAndInit() {
+  if (window.GOOGLE_CREDENTIAL) {
+    try {
+      const cred = firebase.auth.GoogleAuthProvider.credential(
+        window.GOOGLE_CREDENTIAL.idToken,
+        window.GOOGLE_CREDENTIAL.accessToken
+      );
+      await firebase.auth().signInWithCredential(cred);
+    } catch (e) {
+      console.warn('Firebase auth failed, proceeding without auth:', e);
+    }
+  }
+  initFirebase();
+}
 // Staging: Firebase connects only after Google sign-in (see doGoogleSignIn).
 // Guard: if the auth-gate is still present, wait for sign-in before connecting.
 if (!document.getElementById('auth-gate')) initFirebase();
