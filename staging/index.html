@@ -2498,13 +2498,13 @@ function renderSTI() {
               <td class="sti-pct-col">${t.weight}%</td>
               <td class="sti-num-col">
                 <input type="text" class="sti-input" value="${esc(data.actEst)}"
-                       placeholder="N/A" ${disabledAttr}
+                       placeholder="" ${disabledAttr}
                        oninput="${inputHandler}">
               </td>
               <td class="sti-num-col">
                 <input type="text" class="sti-input sti-achievement ${achClass}"
                        value="${esc(data.achievement)}"
-                       placeholder="0%" ${disabledAttr}
+                       placeholder="" ${disabledAttr}
                        oninput="${achHandler}"
                        onblur="${achBlurHandler}">
               </td>
