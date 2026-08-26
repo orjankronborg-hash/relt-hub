@@ -836,6 +836,7 @@ async function doGoogleSignIn() {
               <option value="">Select month...</option>
             </select>
             <button class="btn btn-sm btn-green" onclick="addSTIMonth()">+ Add Month</button>
+            <button class="btn btn-sm btn-danger" id="del-sti-month-btn" onclick="delSTIMonth()" style="display:none">✕ Delete Month</button>
           </div>
         </div>
         <div id="sti-content"></div>
@@ -2425,9 +2426,20 @@ function renderSTI() {
   const content = document.getElementById('sti-content');
   if (!monthFilter || !content) return;
 
+  // Auto-select latest month if nothing is selected
+  const currentSelection = monthFilter.value;
+  const shouldAutoSelect = !currentSelection && S.stiMonths.length > 0;
+
   // Populate month dropdown
   monthFilter.innerHTML = '<option value="">Select month...</option>' +
     S.stiMonths.map(m => `<option value="${m.id}">${esc(m.month)}</option>`).join('');
+
+  // Set selection (either restore previous or auto-select latest)
+  if (shouldAutoSelect) {
+    monthFilter.value = S.stiMonths[S.stiMonths.length - 1].id;
+  } else if (currentSelection) {
+    monthFilter.value = currentSelection;
+  }
 
   // Get selected month (can be null - table still renders with empty Act/Est columns)
   const selectedId = monthFilter.value;
@@ -2504,6 +2516,10 @@ function renderSTI() {
       </table>
     </div>
   `;
+
+  // Show/hide delete button based on selection
+  const delBtn = document.getElementById('del-sti-month-btn');
+  if (delBtn) delBtn.style.display = monthSelected ? '' : 'none';
 }
 
 function addSTIMonth() {
@@ -2535,6 +2551,21 @@ function updSTI(monthId, targetId, field, value) {
   if (!month.targets[targetId]) month.targets[targetId] = {actEst: '', achievement: ''};
   month.targets[targetId][field] = value;
   saveLocal();
+}
+
+function delSTIMonth() {
+  const monthFilter = document.getElementById('sti-month-filter');
+  const selectedId = monthFilter.value;
+  if (!selectedId) return;
+
+  const month = S.stiMonths.find(m => m.id === selectedId);
+  if (!month) return;
+
+  if (!confirm(`Delete "${month.month}"? This cannot be undone.`)) return;
+
+  S.stiMonths = S.stiMonths.filter(m => m.id !== selectedId);
+  save();
+  renderSTI();
 }
 
 // ═══════════════════════════════════════════════════════════════
