@@ -2429,30 +2429,31 @@ function renderSTI() {
   monthFilter.innerHTML = '<option value="">Select month...</option>' +
     S.stiMonths.map(m => `<option value="${m.id}">${esc(m.month)}</option>`).join('');
 
-  // Get selected month
+  // Get selected month (can be null - table still renders with empty Act/Est columns)
   const selectedId = monthFilter.value;
   const selectedMonth = S.stiMonths.find(m => m.id === selectedId);
 
-  if (!selectedMonth) {
-    content.innerHTML = '<div class="sti-empty">No month selected. Click "+ Add Month" to create a tracking entry.</div>';
-    return;
-  }
-
-  // Calculate total weighted achievement
+  // Calculate total weighted achievement (only if month is selected)
   let totalWeighted = 0;
   let totalWeight = 0;
-  STI_TARGETS.forEach(t => {
-    const data = selectedMonth.targets[t.id];
-    if (data && data.achievement !== null && data.achievement !== '') {
-      const ach = parseFloat(data.achievement) || 0;
-      totalWeighted += (ach / 100) * t.weight;
-      totalWeight += t.weight;
-    }
-  });
+  if (selectedMonth) {
+    STI_TARGETS.forEach(t => {
+      const data = selectedMonth.targets[t.id];
+      if (data && data.achievement !== null && data.achievement !== '') {
+        const ach = parseFloat(data.achievement) || 0;
+        totalWeighted += (ach / 100) * t.weight;
+        totalWeight += t.weight;
+      }
+    });
+  }
   const totalAchievement = totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 100) : 0;
 
-  // Render table
+  // Render table - always visible, even if no month selected
+  const monthSelected = !!selectedMonth;
+  const disabledAttr = monthSelected ? '' : 'disabled';
+
   content.innerHTML = `
+    ${!monthSelected ? '<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;margin-bottom:16px;color:#856404;font-size:14px"><strong>⚠️ No month selected</strong> — Select a month above to view and edit achievement data.</div>' : ''}
     <div class="sti-table-wrap">
       <table class="sti-table">
         <thead>
@@ -2468,10 +2469,12 @@ function renderSTI() {
         </thead>
         <tbody>
           ${STI_TARGETS.map(t => {
-            const data = selectedMonth.targets[t.id] || {actEst: '', achievement: ''};
+            const data = selectedMonth ? (selectedMonth.targets[t.id] || {actEst: '', achievement: ''}) : {actEst: '', achievement: ''};
             const achNum = parseFloat(data.achievement) || 0;
             const achClass = achNum >= 100 ? 'ach-100' : achNum >= 70 ? 'ach-70' : 'ach-low';
             const weighted = achNum > 0 ? Math.round((achNum / 100) * t.weight) : 0;
+            const inputHandler = monthSelected ? `updSTI('${selectedMonth.id}','${t.id}','actEst',this.value)` : '';
+            const achHandler = monthSelected ? `updSTI('${selectedMonth.id}','${t.id}','achievement',this.value);renderSTI()` : '';
             return `<tr>
               <td class="sti-desc-col">${esc(t.desc)}</td>
               <td class="sti-num-col">${esc(String(t.target))}</td>
@@ -2479,14 +2482,14 @@ function renderSTI() {
               <td class="sti-pct-col">${t.weight}%</td>
               <td class="sti-num-col">
                 <input type="text" class="sti-input" value="${esc(data.actEst)}"
-                       placeholder="N/A"
-                       oninput="updSTI('${selectedMonth.id}','${t.id}','actEst',this.value)">
+                       placeholder="N/A" ${disabledAttr}
+                       oninput="${inputHandler}">
               </td>
               <td class="sti-num-col">
                 <input type="text" class="sti-input sti-achievement ${achClass}"
                        value="${esc(data.achievement)}"
-                       placeholder="0%"
-                       oninput="updSTI('${selectedMonth.id}','${t.id}','achievement',this.value);renderSTI()">
+                       placeholder="0%" ${disabledAttr}
+                       oninput="${achHandler}">
               </td>
               <td class="sti-pct-col">${weighted}%</td>
             </tr>`;
