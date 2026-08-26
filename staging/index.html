@@ -2489,7 +2489,8 @@ function renderSTI() {
             const achClass = achNum >= 100 ? 'ach-100' : achNum >= 70 ? 'ach-70' : 'ach-low';
             const weighted = achNum > 0 ? Math.round((achNum / 100) * t.weight) : 0;
             const inputHandler = monthSelected ? `updSTI('${selectedMonth.id}','${t.id}','actEst',this.value)` : '';
-            const achHandler = monthSelected ? `updSTI('${selectedMonth.id}','${t.id}','achievement',this.value);renderSTI()` : '';
+            const achHandler = monthSelected ? `updSTI('${selectedMonth.id}','${t.id}','achievement',this.value)` : '';
+            const achBlurHandler = monthSelected ? `updSTIAchievement('${selectedMonth.id}','${t.id}',this)` : '';
             return `<tr>
               <td class="sti-desc-col">${esc(t.desc)}</td>
               <td class="sti-num-col">${esc(String(t.target))}</td>
@@ -2504,7 +2505,8 @@ function renderSTI() {
                 <input type="text" class="sti-input sti-achievement ${achClass}"
                        value="${esc(data.achievement)}"
                        placeholder="0%" ${disabledAttr}
-                       oninput="${achHandler}">
+                       oninput="${achHandler}"
+                       onblur="${achBlurHandler}">
               </td>
               <td class="sti-pct-col">${weighted}%</td>
             </tr>`;
@@ -2554,6 +2556,31 @@ function updSTI(monthId, targetId, field, value) {
   if (!month.targets[targetId]) month.targets[targetId] = {actEst: '', achievement: ''};
   month.targets[targetId][field] = value;
   saveLocal();
+}
+
+function updSTIAchievement(monthId, targetId, input) {
+  let value = input.value.trim();
+
+  // Skip if empty or N/A
+  if (!value || value.toUpperCase() === 'N/A') {
+    updSTI(monthId, targetId, 'achievement', value);
+    save();
+    renderSTI();
+    return;
+  }
+
+  // Remove any existing % sign
+  value = value.replace('%', '');
+
+  // If it's a number, add % automatically
+  if (!isNaN(value) && value !== '') {
+    value = value + '%';
+  }
+
+  // Update the value
+  updSTI(monthId, targetId, 'achievement', value);
+  save();
+  renderSTI();
 }
 
 function delSTIMonth() {
