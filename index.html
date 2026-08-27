@@ -613,6 +613,16 @@ async function doGoogleSignIn() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ hd: '' });
     const result = await firebase.auth().signInWithPopup(provider);
+
+    // Check if email is allowed
+    if (!result.user.email.endsWith('@m10s.io') && !result.user.email.endsWith('@vend.com')) {
+      await firebase.auth().signOut();
+      err.textContent = 'Access restricted to @m10s.io and @vend.com accounts.';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+
     window._googleCred = { idToken: result.credential.idToken, accessToken: result.credential.accessToken };
     document.getElementById('auth-gate').remove();
     initFirebase();
