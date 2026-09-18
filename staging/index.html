@@ -3063,7 +3063,7 @@ async function authAndInit() {
   }
   initFirebase();
 }
-// Staging: Firebase connects only after Google sign-in (see doGoogleSignIn).
+// Firebase connects only after Google sign-in (see doGoogleSignIn).
 // Guard: if the auth-gate is still present, wait for sign-in before connecting.
 if (!document.getElementById('auth-gate')) initFirebase();
 
