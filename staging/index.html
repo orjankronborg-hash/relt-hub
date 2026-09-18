@@ -1505,7 +1505,7 @@ function detailHtml(t, sid) {
       <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-sm" onclick="addPR('${sid}','${t.id}')">+ Add pre-read link</button>
         <a class="btn btn-sm" href="${(()=>{const d=driveYearLabel(findS(sid));return d.url;})()}" target="_blank" rel="noopener" title="Open RELT Drive folder">📂 Drive${(()=>{const d=driveYearLabel(findS(sid));return d.label?' ('+d.label+')':'';})()}</a>
-        <span class="pr-hint">⚠️ Share the file with the RELT team — the Drive shortcut does not grant access.</span>
+        <span class="pr-hint">⚠️ Shortcut to pre read is automatically created to RELT Drive — remember to grant access</span>
       </div>
     </div>
     <div class="minutes-panel">
