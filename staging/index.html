@@ -130,6 +130,9 @@ select.ii { cursor: pointer; }
 .pr-url { flex: 2 !important; }
 .pr-open { background: var(--green); color: white !important; font-weight: 600; border-radius: 4px; text-decoration: none; }
 .pr-open:hover { opacity: .85; }
+/* Reminder that the Drive automation mirrors pre-reads as shortcuts, which do
+   NOT carry the file's permissions with them. */
+.pr-hint { font-size: 11px; color: #8a6100; background: #fff8e6; border: 1px solid #f0e0b0; border-radius: 4px; padding: 3px 8px; line-height: 1.45; }
 
 /* Minutes */
 .minutes-panel { margin-top: 14px; }
@@ -1499,9 +1502,10 @@ function detailHtml(t, sid) {
     <div class="ds" style="margin-bottom:14px">
       <h4>Pre-reads</h4>
       <div id="prl-${t.id}">${prRows}</div>
-      <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-sm" onclick="addPR('${sid}','${t.id}')">+ Add pre-read link</button>
         <a class="btn btn-sm" href="${(()=>{const d=driveYearLabel(findS(sid));return d.url;})()}" target="_blank" rel="noopener" title="Open RELT Drive folder">📂 Drive${(()=>{const d=driveYearLabel(findS(sid));return d.label?' ('+d.label+')':'';})()}</a>
+        <span class="pr-hint">⚠️ Share the file with the RELT team — the Drive shortcut does not grant access.</span>
       </div>
     </div>
     <div class="minutes-panel">
