@@ -649,7 +649,7 @@ async function doGoogleSignIn() {
         <a class="nav-item active" data-tab="agenda" onclick="showTab('agenda')">Meeting Agenda</a>
         <a class="nav-item" data-tab="decisions" onclick="showTab('decisions')">Decision Log</a>
         <a class="nav-item" data-tab="remeetup" onclick="showTab('remeetup')">RE Meetup</a>
-        <a class="nav-item nav-external" href="https://drive.google.com/drive/u/0/folders/1J89jbu9bH4yxM7eqc8JNa4NTzvwD0lIU" target="_blank" rel="noopener">RELT Drive Folder <span class="external-icon">&#8599;</span></a>
+        <a class="nav-item nav-external" href="https://drive.google.com/drive/folders/0ADa5VwkdwAwRUk9PVA" target="_blank" rel="noopener">RELT Drive Folder <span class="external-icon">&#8599;</span></a>
       </div>
       <div class="nav-group">
         <div class="nav-group-title">TRACKING</div>
@@ -980,6 +980,7 @@ function save() {
     db.ref(DOC_ID + '/reMeetups').set(S.reMeetups || []);
     db.ref(DOC_ID + '/stiMonths').set(S.stiMonths || []);
     db.ref(DOC_ID + '/meta/lastUpdated').set(Date.now());
+    requestDriveSync();
   }
   document.getElementById('ss').textContent = 'All changes saved ✓';
 }
@@ -1144,28 +1145,133 @@ function parseSessionDate(str) {
   if (month === -1 || day === -1) return Infinity;
   return month * 100 + day;
 }
-const DRIVE_ROOT = 'https://drive.google.com/drive/u/0/folders/1J89jbu9bH4yxM7eqc8JNa4NTzvwD0lIU';
-const DRIVE_MONTHS = {
-  7: '13Nt6oXoPbIDVwgH-ZM0vk8Cu70Jnpq_F',
-  8: '1y4wUsZQPzEDCbX_6rhiU1LbYuK6tIKSq',
-  9: '1JIWKvLpq0SEbwuo6OlzEBU5a8i50s47G',
-  10: '1dXkm0kFYldTJPxc8P1ah4-S8_O-cF_TZ',
-  11: '16bpkDONXZ_aeHI8Asw--NZZU64UyUC93',
-};
+// "00. RELT Home / Meetings" root, and one flat folder per calendar year
+// beneath it (no month sub-folders).
+//
+// Deliberately NO "/u/0/" in these URLs: that segment forces the link open in
+// the reader's FIRST signed-in Google account, which 404s for anyone whose
+// default account isn't their Vend one.
+const DRIVE_ROOT = 'https://drive.google.com/drive/folders/16pwwlfhcdUhrEfoMA5FgtOA39Mf883gX';
+
+// Year → folder ID, published by automation/copy-prereads.gs each time it runs.
+// Kept empty here on purpose: the folders are created by the automation, so
+// hardcoding a second copy of their IDs only creates something to go stale.
+// Until the data loads, the Drive button falls back to the Meetings root.
+let DRIVE_YEARS = {};
 const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-function driveMonthLabel(dateStr) {
-  if (!dateStr) return {label: '', url: DRIVE_ROOT};
-  const s = dateStr.toLowerCase().replace(/[,]/g,'');
-  for (const p of s.split(/\s+/)) {
-    const m = MONTH_MAP[p];
-    if (m !== undefined) {
-      const label = String(m+1).padStart(2,'0') + '.' + MONTH_FULL[m];
-      const folderId = DRIVE_MONTHS[m];
-      const url = folderId ? 'https://drive.google.com/drive/u/0/folders/' + folderId : DRIVE_ROOT;
-      return {label, url};
-    }
+
+// Reads session.year (set by openDatePicker once a real date is picked) with
+// a same-calendar-year fallback for older sessions saved before that field
+// existed.
+function driveYearLabel(session) {
+  if (!session || !session.date) return {label: '', url: DRIVE_ROOT};
+  const year = session.year || new Date().getFullYear();
+  const folderId = DRIVE_YEARS[year];
+  const url = folderId ? 'https://drive.google.com/drive/folders/' + folderId : DRIVE_ROOT;
+  return {label: String(year), url};
+}
+
+// "YYYY-MM-DD" for a session, used to name uploaded/linked pre-read files
+// consistently with the RELT naming convention. Mirrors parseSessionDate_
+// in automation/copy-prereads.gs — keep both in sync.
+function sessionISODate(s) {
+  if (!s || !s.date) return '';
+  const str = s.date.toLowerCase().replace(/,/g,'');
+  let month = -1, day = -1;
+  for (const p of str.split(/\s+/)) {
+    const m = MONTH_MAP[p]; if (m !== undefined) month = m;
+    const n = parseInt(p); if (!isNaN(n) && n >= 1 && n <= 31) day = n;
   }
-  return {label: '', url: DRIVE_ROOT};
+  if (month === -1 || day === -1) return '';
+  const year = s.year || new Date().getFullYear();
+  const pad = n => String(n).padStart(2, '0');
+  return year + '-' + pad(month + 1) + '-' + pad(day);
+}
+
+// Set this once automation/webapp.gs is deployed as a Web App
+// (Deploy → New deployment → Web app → Execute as: Me → Who has access: Anyone).
+// Paste the resulting /exec URL here. Secret must match WEBAPP_SHARED_SECRET
+// in that script.
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwDKsawxvY2B6j7f-lyJ-9dgw8ySQ0TRvBRHHJfxZbBRO_t5MrUOZ45LUFuKuPoJOw/exec';
+const WEBAPP_SHARED_SECRET = 'relt-hub-upload-2026';
+
+// Asks the Drive automation to run now rather than waiting for its hourly
+// trigger, so a pre-read added during a meeting shows up in Drive immediately.
+//
+// Fire-and-forget by design: nothing in the UI depends on the result, and a
+// save must never block or fail because Drive was slow. Debounced, because
+// save() fires on every keystroke-ish edit and we want one run per burst of
+// activity, not one per field.
+let _syncTimer = null;
+function requestDriveSync() {
+  if (!WEBAPP_URL || WEBAPP_URL.indexOf('PASTE_') === 0) return; // not deployed yet
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    fetch(WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'}, // avoids a CORS preflight
+      body: JSON.stringify({action: 'sync', secret: WEBAPP_SHARED_SECRET})
+    }).catch(() => {}); // a failed nudge is harmless — the hourly trigger still runs
+  }, 10000);
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function attachPRFile(sid, tid, i, inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  if (!file) return;
+  if (!WEBAPP_URL || WEBAPP_URL.indexOf('PASTE_') === 0) {
+    alert('File upload isn\'t wired up yet — deploy automation/webapp.gs and paste its URL into WEBAPP_URL first.');
+    inputEl.value = '';
+    return;
+  }
+  const s = findS(sid), t = findT(s, tid);
+  if (!t || !t.prs || !t.prs[i]) return;
+  const statusEl = document.getElementById(`prs-${tid}-${i}`);
+  if (statusEl) statusEl.textContent = 'Uploading…';
+  try {
+    const dataBase64 = await fileToBase64(file);
+    const payload = {
+      secret: WEBAPP_SHARED_SECRET,
+      dateISO: sessionISODate(s),
+      topicTitle: t.title || '',
+      label: t.prs[i].l || '',
+      fileName: file.name,
+      mimeType: file.type || 'application/octet-stream',
+      dataBase64
+    };
+    const res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'}, // avoids a CORS preflight Apps Script can't answer
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!result.ok) throw new Error(result.error || 'upload failed');
+    t.prs[i].u = result.url;
+    if (!t.prs[i].l) t.prs[i].l = file.name.replace(/\.[^.]+$/, '');
+    const row = document.getElementById(`prr-${tid}-${i}`);
+    if (row) {
+      const textInput = row.querySelector('input[type="text"]');
+      const urlInput = row.querySelector('.pr-url');
+      if (textInput) textInput.value = t.prs[i].l;
+      if (urlInput) urlInput.value = t.prs[i].u;
+    }
+    if (statusEl) statusEl.textContent = 'Uploaded ✓';
+    save();
+  } catch (err) {
+    if (statusEl) statusEl.textContent = 'Upload failed';
+    alert('Upload failed: ' + err.message);
+  } finally {
+    inputEl.value = '';
+  }
 }
 
 let _upcomingSid = null;
@@ -1371,6 +1477,8 @@ function detailHtml(t, sid) {
       <input class="pr-url" type="url" value="${esc(p.u)}" placeholder="Google Drive / Glint URL…"
              oninput="updPR('${sid}','${t.id}',${i},'u',this.value)">
       ${p.u?`<a class="btn btn-sm pr-open" href="${esc(p.u)}" target="_blank">Open ↗</a>`:''}
+      <label class="btn btn-sm pr-attach" title="Attach a local file — uploads to Drive and fills in the link">📎<input type="file" style="display:none" onchange="attachPRFile('${sid}','${t.id}',${i},this)"></label>
+      <span class="pr-attach-status" id="prs-${t.id}-${i}"></span>
       <button class="btn btn-sm btn-danger" onclick="delPR('${sid}','${t.id}',${i})">✕</button>
     </div>`).join('');
 
@@ -1393,7 +1501,7 @@ function detailHtml(t, sid) {
       <div id="prl-${t.id}">${prRows}</div>
       <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
         <button class="btn btn-sm" onclick="addPR('${sid}','${t.id}')">+ Add pre-read link</button>
-        <a class="btn btn-sm" href="${(()=>{const d=driveMonthLabel(findS(sid)?.date);return d.url;})()}" target="_blank" rel="noopener" title="Open RELT Drive folder">📂 Drive${(()=>{const d=driveMonthLabel(findS(sid)?.date);return d.label?' ('+d.label+')':'';})()}</a>
+        <a class="btn btn-sm" href="${(()=>{const d=driveYearLabel(findS(sid));return d.url;})()}" target="_blank" rel="noopener" title="Open RELT Drive folder">📂 Drive${(()=>{const d=driveYearLabel(findS(sid));return d.label?' ('+d.label+')':'';})()}</a>
       </div>
     </div>
     <div class="minutes-panel">
@@ -1471,6 +1579,8 @@ function addPR(sid,tid) {
     d.innerHTML=`
       <input type="text" value="" placeholder="Label…" oninput="updPR('${sid}','${tid}',${i},'l',this.value)">
       <input class="pr-url" type="url" value="" placeholder="Google Drive / Glint URL…" oninput="updPR('${sid}','${tid}',${i},'u',this.value)">
+      <label class="btn btn-sm pr-attach" title="Attach a local file — uploads to Drive and fills in the link">📎<input type="file" style="display:none" onchange="attachPRFile('${sid}','${tid}',${i},this)"></label>
+      <span class="pr-attach-status" id="prs-${tid}-${i}"></span>
       <button class="btn btn-sm btn-danger" onclick="delPR('${sid}','${tid}',${i})">✕</button>`;
     list.appendChild(d);
     d.querySelector('input').focus();
@@ -1489,6 +1599,8 @@ function delPR(sid,tid,i) {
         <input type="text" value="${esc(p.l)}" placeholder="Label…" oninput="updPR('${sid}','${tid}',${j},'l',this.value)">
         <input class="pr-url" type="url" value="${esc(p.u)}" placeholder="Google Drive URL…" oninput="updPR('${sid}','${tid}',${j},'u',this.value)">
         ${p.u?`<a class="btn btn-sm pr-open" href="${esc(p.u)}" target="_blank">Open ↗</a>`:''}
+        <label class="btn btn-sm pr-attach" title="Attach a local file — uploads to Drive and fills in the link">📎<input type="file" style="display:none" onchange="attachPRFile('${sid}','${tid}',${j},this)"></label>
+        <span class="pr-attach-status" id="prs-${tid}-${j}"></span>
         <button class="btn btn-sm btn-danger" onclick="delPR('${sid}','${tid}',${j})">✕</button>
       </div>`).join('');
   }
@@ -1636,6 +1748,7 @@ function openDatePicker(sid, btn) {
     const formatted = days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
     const s = findS(sid); if (!s) return;
     s.date = formatted;
+    s.year = d.getFullYear(); // full year, kept separately so the displayed short date is unchanged
     const dateEl = btn.previousElementSibling;
     if (dateEl) dateEl.textContent = formatted;
     save();
@@ -2871,6 +2984,13 @@ async function initFirebase() {
     else if (!remote || !remote.reMeetups) { db.ref(DOC_ID + '/reMeetups').set(S.reMeetups); }
     if (!S.stiMonths || !S.stiMonths.length) { seedSTIData(); save(); }
     else if (!remote || !remote.stiMonths) { db.ref(DOC_ID + '/stiMonths').set(S.stiMonths); }
+
+    // Year folder IDs are owned by the Drive automation, not by the hub — it
+    // creates the folders, so it is the only thing that knows their IDs.
+    db.ref(DOC_ID + '/driveFolders').on('value', snap => {
+      DRIVE_YEARS = snap.val() || {};
+      if (!isEditing()) render();
+    });
 
     db.ref(DOC_ID + '/sessions').on('value', snap => {
       if (!snap.val()) return;
