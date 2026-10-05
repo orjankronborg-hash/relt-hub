@@ -628,6 +628,7 @@ async function doGoogleSignIn() {
     // Identity for the session-admin check. The old password flow injected
     // RELT_USER into <head> at decrypt time; Google sign-in has to set it here.
     window.RELT_USER = (result.user.displayName || '').trim().split(/\s+/)[0];
+    window.RELT_EMAIL = (result.user.email || '').toLowerCase();
     document.getElementById('auth-gate').remove();
     if (typeof applyAdminVisibility === 'function') applyAdminVisibility();
     initFirebase();
@@ -961,7 +962,13 @@ let currentTab = 'agenda';
 let agendaDesc = false; // false = upcoming first (Aug → Dec)
 let _fbReady = false;
 const SESSION_ADMINS = ['Kjersti', 'Anne', 'Ørjan'];
-function isSessionAdmin() { return SESSION_ADMINS.includes(window.RELT_USER); }
+// Display names are not guaranteed (a profile provisioned from the email
+// address gives "Orjan", not "Ørjan"), so email is accepted as well.
+const SESSION_ADMIN_EMAILS = ['orjan.kronborg@vend.com'];
+function isSessionAdmin() {
+  return SESSION_ADMINS.includes(window.RELT_USER)
+      || SESSION_ADMIN_EMAILS.includes((window.RELT_EMAIL || '').toLowerCase());
+}
 function isEditing() {
   const el = document.activeElement;
   if (!el) return false;
