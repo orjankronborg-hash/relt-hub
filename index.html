@@ -624,9 +624,7 @@ async function doGoogleSignIn() {
       return;
     }
     window._googleCred = { idToken: result.credential.idToken, accessToken: result.credential.accessToken };
-    // Identity for the session-admin check. The old password flow injected
-    // RELT_USER into <head> at decrypt time; Google sign-in has to set it here.
-    window.RELT_USER = (result.user.displayName || '').trim().split(/\s+/)[0];
+    // Identity for the session-admin check (see SESSION_ADMINS).
     window.RELT_EMAIL = (result.user.email || '').toLowerCase();
     document.getElementById('auth-gate').remove();
     if (typeof applyAdminVisibility === 'function') applyAdminVisibility();
@@ -960,13 +958,15 @@ let _saveTimer;
 let currentTab = 'agenda';
 let agendaDesc = false; // false = upcoming first (Aug → Dec)
 let _fbReady = false;
-const SESSION_ADMINS = ['Kjersti', 'Anne', 'Ørjan'];
-// Display names are not guaranteed (a profile provisioned from the email
-// address gives "Orjan", not "Ørjan"), so email is accepted as well.
-const SESSION_ADMIN_EMAILS = ['orjan.kronborg@vend.com'];
+// Keyed on the Google account, the only identity the sign-in actually
+// authenticates. Display names are editable and unreliable in spelling.
+const SESSION_ADMINS = [
+  'orjan.kronborg@vend.com',
+  'anne.ormstad@vend.com',
+  'kjersti.hoklingen@vend.com',
+];
 function isSessionAdmin() {
-  return SESSION_ADMINS.includes(window.RELT_USER)
-      || SESSION_ADMIN_EMAILS.includes((window.RELT_EMAIL || '').toLowerCase());
+  return SESSION_ADMINS.includes((window.RELT_EMAIL || '').toLowerCase());
 }
 function isEditing() {
   const el = document.activeElement;
@@ -3077,7 +3077,7 @@ async function authAndInit() {
 // Guard: if the auth-gate is still present, wait for sign-in before connecting.
 if (!document.getElementById('auth-gate')) initFirebase();
 
-// Re-run after sign-in too: at first load RELT_USER is not set yet, because
+// Re-run after sign-in too: at first load RELT_EMAIL is not set yet, because
 // the auth gate resolves later (see doGoogleSignIn).
 function applyAdminVisibility() {
   const addBtn = document.getElementById('add-session-btn');
