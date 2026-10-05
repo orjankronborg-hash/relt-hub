@@ -625,7 +625,11 @@ async function doGoogleSignIn() {
       return;
     }
     window._googleCred = { idToken: result.credential.idToken, accessToken: result.credential.accessToken };
+    // Identity for the session-admin check. The old password flow injected
+    // RELT_USER into <head> at decrypt time; Google sign-in has to set it here.
+    window.RELT_USER = (result.user.displayName || '').trim().split(/\s+/)[0];
     document.getElementById('auth-gate').remove();
+    if (typeof applyAdminVisibility === 'function') applyAdminVisibility();
     initFirebase();
   } catch (e) {
     console.error('Google sign-in error:', e);
@@ -3067,10 +3071,14 @@ async function authAndInit() {
 // Guard: if the auth-gate is still present, wait for sign-in before connecting.
 if (!document.getElementById('auth-gate')) initFirebase();
 
-if (!isSessionAdmin()) {
+// Re-run after sign-in too: at first load RELT_USER is not set yet, because
+// the auth gate resolves later (see doGoogleSignIn).
+function applyAdminVisibility() {
   const addBtn = document.getElementById('add-session-btn');
-  if (addBtn) addBtn.style.display = 'none';
+  if (addBtn) addBtn.style.display = isSessionAdmin() ? '' : 'none';
+  if (typeof render === 'function') render();
 }
+applyAdminVisibility();
 
 // Restore saved per-column widths
 restoreColWidths();
