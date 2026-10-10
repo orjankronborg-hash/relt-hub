@@ -38,6 +38,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; f
 .session-date.done { color: #999; text-decoration: line-through; }
 .session-date.cancelled { color: #c00; text-decoration: line-through; }
 .session.upcoming { box-shadow: 0 0 0 2px #7B2020, 0 2px 10px rgba(123,32,32,.28); }
+/* Divider between upcoming sessions and the ones already held. */
+.past-divider { display: flex; align-items: center; gap: 9px; margin: 22px 0 14px; padding: 7px 4px; cursor: pointer; user-select: none; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px; color: #999; border-top: 1px solid #e0e0e0; }
+.past-divider:hover { color: var(--green); border-top-color: #c9a0a0; }
+.past-caret { font-size: 11px; width: 10px; }
+.past-count { background: #e4e4e4; color: #666; border-radius: 9px; padding: 1px 9px; font-size: 11px; letter-spacing: 0; }
+.past-divider:hover .past-count { background: #e8d4d4; color: var(--green); }
+.past-hint { margin-left: auto; font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; color: #bbb; }
 .session.upcoming .session-header { background: #f6e9e9; border-bottom-color: #d4a4a4; }
 .next-badge { background: #7B2020; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .6px; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; white-space: nowrap; }
 .session-time { color: #555; font-size: 15px; outline: none; min-width: 110px; }
@@ -758,7 +765,7 @@ async function doGoogleSignIn() {
 
       <div id="agenda-toolbar">
         <span style="font-size:11px;color:#888;font-weight:600">Sort:</span>
-        <button class="btn btn-sm" id="sort-btn" onclick="toggleAgendaSort()" style="font-size:11px">&#8593; Upcoming first</button>
+        <button class="btn btn-sm" id="sort-btn" onclick="toggleAgendaSort()" style="font-size:11px" title="Cycle: upcoming first → earliest → latest">&#9733; Upcoming first</button>
         <button class="btn btn-sm btn-green" id="add-session-btn" onclick="addSession()">+ Add Session</button>
         <button class="btn btn-sm" onclick="resetColWidths()" style="font-size:11px;margin-left:auto" title="Reset all column widths to default">↔ Reset columns</button>
       </div>
@@ -1036,7 +1043,19 @@ if (!S.legacyDecisions) S.legacyDecisions = JSON.parse(JSON.stringify(LEGACY_DEC
 const open = new Set();
 let _saveTimer;
 let currentTab = 'agenda';
-let agendaDesc = false; // false = upcoming first (Aug → Dec)
+// Agenda ordering. 'upcoming' pins the next meeting at the top and tucks past
+// sessions behind a collapsible divider; 'asc'/'desc' are plain chronological.
+// (Was a boolean labelled "upcoming first" that in fact only sorted Aug → Dec,
+// which buried the next meeting mid-list once the year was underway.)
+const AGENDA_SORTS = [
+  {val:'upcoming', label:'★ Upcoming first'},
+  {val:'asc',      label:'↑ Date, earliest first'},
+  {val:'desc',     label:'↓ Date, latest first'},
+];
+let agendaSort = (() => {
+  try { return localStorage.getItem('reltAgendaSort') || 'upcoming'; } catch(e) { return 'upcoming'; }
+})();
+let pastExpanded = false;
 let _fbReady = false;
 // Keyed on the Google account, the only identity the sign-in actually
 // authenticates. Display names are editable and unreliable in spelling.
@@ -1381,13 +1400,51 @@ function computeUpcomingSid() {
   return best;
 }
 
+// Split sessions into what is still to come and what has already happened,
+// using the same month*100+day key the rest of the agenda runs on.
+function splitSessionsByDate() {
+  const now = new Date();
+  const todayKey = now.getMonth() * 100 + now.getDate();
+  const byDate = (a,b) => parseSessionDate(a.date) - parseSessionDate(b.date);
+  const future = [], past = [];
+  // A session with an unparseable date (e.g. a freshly added "New Session")
+  // keys to Infinity, so it lands at the end of future rather than vanishing.
+  S.sessions.forEach(s => (parseSessionDate(s.date) >= todayKey ? future : past).push(s));
+  future.sort(byDate);
+  past.sort(byDate).reverse();   // most recent first — nearest to now, nearest to top
+  return {future, past};
+}
+
 function render() {
   const m = document.getElementById('main');
   m.innerHTML = '';
   _upcomingSid = computeUpcomingSid();
-  const sorted = [...S.sessions].sort((a,b) => parseSessionDate(a.date) - parseSessionDate(b.date));
-  const sessions = agendaDesc ? sorted.reverse() : sorted;
-  sessions.forEach(s => m.appendChild(renderSession(s)));
+
+  if (agendaSort !== 'upcoming') {
+    const sorted = [...S.sessions].sort((a,b) => parseSessionDate(a.date) - parseSessionDate(b.date));
+    if (agendaSort === 'desc') sorted.reverse();
+    sorted.forEach(s => m.appendChild(renderSession(s)));
+    return;
+  }
+
+  const {future, past} = splitSessionsByDate();
+  future.forEach(s => m.appendChild(renderSession(s)));
+
+  if (past.length) {
+    const div = document.createElement('div');
+    div.className = 'past-divider';
+    div.onclick = togglePastSessions;
+    div.innerHTML = `<span class="past-caret">${pastExpanded ? '▾' : '▸'}</span>
+      <span>Past sessions</span><span class="past-count">${past.length}</span>
+      <span class="past-hint">${pastExpanded ? 'click to hide' : 'click to show'}</span>`;
+    m.appendChild(div);
+    if (pastExpanded) past.forEach(s => m.appendChild(renderSession(s)));
+  }
+}
+
+function togglePastSessions() {
+  pastExpanded = !pastExpanded;
+  render();
 }
 
 const COL_DEFAULTS = {
@@ -1446,11 +1503,21 @@ function resetColWidths() {
   if (currentTab === 'remeetup') renderREMeetup();
 }
 
+function agendaSortLabel() {
+  return (AGENDA_SORTS.find(s => s.val === agendaSort) || AGENDA_SORTS[0]).label;
+}
+
 function toggleAgendaSort() {
-  agendaDesc = !agendaDesc;
-  const btn = document.getElementById('sort-btn');
-  if (btn) btn.textContent = agendaDesc ? '↓ Latest first' : '↑ Upcoming first';
+  const i = AGENDA_SORTS.findIndex(s => s.val === agendaSort);
+  agendaSort = AGENDA_SORTS[(i + 1) % AGENDA_SORTS.length].val;
+  try { localStorage.setItem('reltAgendaSort', agendaSort); } catch(e) {}
+  syncAgendaSortBtn();
   render();
+}
+
+function syncAgendaSortBtn() {
+  const btn = document.getElementById('sort-btn');
+  if (btn) btn.textContent = agendaSortLabel();
 }
 
 function tzHint(format) {
@@ -2379,6 +2446,14 @@ function updateFollowUpBadge() {
 
 function goToAgendaTopic(sid, tid) {
   showTab('agenda');
+  // A topic in an already-held session is not in the DOM while past sessions
+  // are collapsed, so the deep link below would silently find nothing. Most
+  // follow-ups and decisions come from past sessions, so this is the norm.
+  if (agendaSort === 'upcoming' && !pastExpanded &&
+      splitSessionsByDate().past.some(s => s.id === sid)) {
+    pastExpanded = true;
+    render();
+  }
   setTimeout(() => {
     const row = document.querySelector(`[data-tid="${tid}"]`);
     if (row) {
@@ -2730,6 +2805,10 @@ function doSearch(raw) {
   const q = raw.trim().toLowerCase();
   document.getElementById('search-clear').classList.toggle('visible', q.length > 0);
 
+  // In 'upcoming' mode past sessions are not in the DOM at all, and this
+  // function searches the DOM — so a search would silently skip them.
+  if (q && agendaSort === 'upcoming' && !pastExpanded) { pastExpanded = true; render(); }
+
   resetSearchHighlights();
   if (!q) return;
 
@@ -2745,7 +2824,8 @@ function doSearch(raw) {
       if (!t) return;
 
       const haystack = [t.title, t.owner, t.pres, t.type, t.purpose, t.disc, t.mins,
-        t.decisionBasis, t.recommendation, t.decisionOutcome, t.decisionComment, t.nextSteps, t.responsible].join(' ').toLowerCase();
+        t.decisionBasis, t.recommendation, t.decisionOutcome, t.decisionComment, t.nextSteps, t.responsible,
+        (t.actions||[]).map(a => `${a.text||''} ${a.owner||''}`).join(' ')].join(' ').toLowerCase();
       const matches = haystack.includes(q);
 
       row.classList.toggle('search-hidden', !matches);
@@ -3101,6 +3181,7 @@ S.sessions.forEach(s => s.topics && s.topics.forEach(t => {
   }
 }));
 
+syncAgendaSortBtn();
 render();
 
 // Hide non-agenda views on init
