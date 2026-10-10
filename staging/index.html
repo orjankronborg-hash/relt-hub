@@ -268,6 +268,9 @@ main.hidden { display: none; }
 .ful-owner { font-weight: 700; color: #555; }
 .ful-due { white-space: nowrap; }
 .ful-due.d-overdue { color: #c62828; font-weight: 700; }
+.ful-due.ful-nodue { color: #bbb; }
+.ful-lbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: #aaa; margin-right: 5px; }
+.ful-due.d-overdue .ful-lbl { color: #d98080; }
 .ful-sep { color: #ddd; }
 .ful-src { color: #1155cc; text-decoration: underline; cursor: pointer; }
 .ful-src:hover { color: #7B2020; }
@@ -713,8 +716,8 @@ async function doGoogleSignIn() {
       <div class="nav-group">
         <div class="nav-group-title">PLANNING</div>
         <a class="nav-item active" data-tab="agenda" onclick="showTab('agenda')">Meeting Agenda</a>
-        <a class="nav-item" data-tab="decisions" onclick="showTab('decisions')">Decision Log</a>
         <a class="nav-item nav-sub" data-tab="followups" onclick="showTab('followups')">Follow-ups <span class="nav-badge" id="fu-nav-badge" style="display:none"></span></a>
+        <a class="nav-item" data-tab="decisions" onclick="showTab('decisions')">Decision Log</a>
         <a class="nav-item" data-tab="remeetup" onclick="showTab('remeetup')">RE Meetup</a>
         <a class="nav-item nav-external" href="https://drive.google.com/drive/folders/0ADa5VwkdwAwRUk9PVA" target="_blank" rel="noopener">RELT Drive Folder <span class="external-icon">&#8599;</span></a>
       </div>
@@ -2284,8 +2287,8 @@ function fulRowHtml(a) {
   const overdue = isOverdue(a);
   const cls = a.status !== 'Open' ? 'r-' + a.status.toLowerCase() : (overdue ? 'r-overdue' : 'r-open');
   const dueTxt = a.due
-    ? `<span class="ful-due${overdue ? ' d-overdue' : ''}">${overdue ? 'Overdue ' : ''}${fmtDue(a.due)}</span>`
-    : `<span class="ful-due" style="color:#bbb">No deadline</span>`;
+    ? `<span class="ful-due${overdue ? ' d-overdue' : ''}"><span class="ful-lbl">Deadline</span>${fmtDue(a.due)}${overdue ? ' · overdue' : ''}</span>`
+    : `<span class="ful-due ful-nodue"><span class="ful-lbl">Deadline</span>none set</span>`;
   const text = a.text
     ? `<div class="ful-text">${esc(a.text)}</div>`
     : `<div class="ful-text ful-blank">(no description yet)</div>`;
