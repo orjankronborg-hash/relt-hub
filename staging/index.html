@@ -184,6 +184,30 @@ select.ii { cursor: pointer; }
 .sc-support.active  { background: #11734b; color: #fff; }
 .sc-eval.active     { background: #c62828; color: #fff; }
 .sc-deferred.active { background: #7b43a1; color: #fff; }
+
+/* ── Follow-up line ─────────────────────────────────────────── */
+.fu-panel { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #ccc; }
+.fu-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #777; letter-spacing: .6px; }
+.fu-toggle:hover { color: var(--green); }
+.fu-toggle input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--green); margin: 0; }
+.fu-count { font-weight: 700; font-size: 11px; color: #8a6100; background: #fff8e6; border: 1px solid #f0e0b0; border-radius: 9px; padding: 1px 8px; letter-spacing: 0; text-transform: none; }
+.fu-count.fu-zero { color: #777; background: #f1f1f1; border-color: #ddd; }
+.fu-body { margin-top: 10px; }
+.fu-head { display: grid; grid-template-columns: 1fr 160px 140px 110px 28px; gap: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #999; letter-spacing: .6px; margin-bottom: 4px; }
+.fu-row { display: grid; grid-template-columns: 1fr 160px 140px 110px 28px; gap: 6px; align-items: center; margin-bottom: 5px; }
+.fu-row input, .fu-row select { border: 1px solid #ddd; border-radius: 4px; padding: 5px 7px; font-size: 13px; font-family: inherit; background: white; width: 100%; }
+.fu-row input:focus, .fu-row select:focus { outline: none; border-color: var(--green); }
+.fu-row.fu-closed input, .fu-row.fu-closed select { opacity: .55; }
+.fu-row.fu-closed .fu-text { text-decoration: line-through; }
+.fu-overdue { border-color: #c62828 !important; background: #fff5f5 !important; }
+.fu-st-Open    { background: #f0f0f0; color: #333; font-weight: 700; }
+.fu-st-Done    { background: #d4edbc; color: #11734b; font-weight: 700; }
+.fu-st-Dropped { background: #e8e8e8; color: #777; font-weight: 700; }
+.fu-hint { font-size: 11px; color: #999; margin-top: 2px; }
+@media (max-width: 900px) {
+  .fu-head { display: none; }
+  .fu-row { grid-template-columns: 1fr 1fr; gap: 5px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+}
 .finalize-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0; }
 .finalized-badge { background: #11734b; color: white; border-radius: 10px; font-size: 11px; font-weight: 700; padding: 3px 10px; }
 .decision-outcome-ea { min-height: 60px; }
@@ -1528,8 +1552,129 @@ function detailHtml(t, sid) {
       <div class="ea minutes-ea" contenteditable data-ce="mins" data-sid="${sid}" data-tid="${t.id}"
            data-ph="Meeting minutes and notes go here…">${t.mins||''}</div>
     </div>
+    ${followUpHtml(t,sid)}
     ${t.type==='Decision' ? decisionPanelHtml(t,sid) : ''}
   </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FOLLOW-UPS
+// ═══════════════════════════════════════════════════════════════
+// Types that can carry a follow-up. Decision topics are excluded — they
+// already have Next Steps / Responsible in the decision panel. Break and
+// Lunch are excluded because detailHtml renders for them too.
+const FOLLOWUP_TYPES = ['', 'Orientation', 'Discussion', 'Workshop'];
+const ACTION_STATUSES = ['Open', 'Done', 'Dropped'];
+
+function canFollowUp(t) { return FOLLOWUP_TYPES.includes(t.type || ''); }
+
+function openActionCount(t) {
+  return (t.actions || []).filter(a => (a.status || 'Open') === 'Open').length;
+}
+
+// Empty due dates are never overdue and always sort last.
+function isOverdue(a) {
+  if (!a.due || (a.status || 'Open') !== 'Open') return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return new Date(a.due + 'T00:00:00') < today;
+}
+
+function actionRowHtml(a, i, sid, tid) {
+  const st = a.status || 'Open';
+  const closed = st !== 'Open';
+  return `
+    <div class="fu-row${closed ? ' fu-closed' : ''}" id="fur-${tid}-${i}">
+      <input class="fu-text" type="text" value="${esc(a.text||'')}" placeholder="What needs to happen…"
+             oninput="updAction('${sid}','${tid}',${i},'text',this.value)">
+      <input type="text" list="owner-list" value="${esc(a.owner||'')}" placeholder="Responsible…"
+             oninput="updAction('${sid}','${tid}',${i},'owner',this.value)">
+      <input class="${isOverdue(a) ? 'fu-overdue' : ''}" type="date" value="${esc(a.due||'')}"
+             onchange="updAction('${sid}','${tid}',${i},'due',this.value);renderFollowUp('${sid}','${tid}')">
+      <select class="fu-st-${st}" onchange="updAction('${sid}','${tid}',${i},'status',this.value);renderFollowUp('${sid}','${tid}')">
+        ${ACTION_STATUSES.map(s=>`<option value="${s}"${s===st?' selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn btn-sm btn-danger" onclick="delAction('${sid}','${tid}',${i})" title="Delete follow-up">✕</button>
+    </div>`;
+}
+
+function followUpHtml(t, sid) {
+  if (!canFollowUp(t)) return '';
+  const on = !!t.followUp;
+  const acts = t.actions || [];
+  const nOpen = openActionCount(t);
+
+  const body = !on ? '' : `
+    <div class="fu-body">
+      <div class="fu-head">
+        <span>Description</span><span>Responsible</span><span>Timeline</span><span>Status</span><span></span>
+      </div>
+      <div id="ful-${t.id}">${acts.map((a,i)=>actionRowHtml(a,i,sid,t.id)).join('')}</div>
+      <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="addAction('${sid}','${t.id}')">+ Add follow-up</button>
+        <span class="fu-hint">Leave the timeline empty if there is no deadline.</span>
+      </div>
+    </div>`;
+
+  return `
+  <div class="fu-panel" id="fup-${t.id}">
+    <label class="fu-toggle">
+      <input type="checkbox"${on?' checked':''} onchange="toggleFollowUp('${sid}','${t.id}',this.checked)">
+      Follow-up required
+      ${on ? `<span class="fu-count${nOpen?'':' fu-zero'}">${nOpen} open</span>` : ''}
+    </label>
+    ${body}
+  </div>`;
+}
+
+// Re-render just this topic's follow-up panel, preserving focus where possible.
+function renderFollowUp(sid, tid) {
+  const s=findS(sid), t=findT(s,tid); if(!t) return;
+  const panel = document.getElementById('fup-'+tid);
+  if (panel) panel.outerHTML = followUpHtml(t, sid);
+}
+
+function toggleFollowUp(sid, tid, on) {
+  const s=findS(sid), t=findT(s,tid); if(!t) return;
+  if (!on && (t.actions||[]).some(a => (a.text||a.owner||a.due))) {
+    if (!confirm('Hide the follow-up section? The rows are kept and will reappear if you tick the box again.')) {
+      renderFollowUp(sid, tid);
+      return;
+    }
+  }
+  t.followUp = on;
+  // Ticking the box with no rows yet starts you off with one.
+  if (on && !(t.actions||[]).length) {
+    t.actions = [{id:uid(), text:'', owner:'', due:'', status:'Open'}];
+  }
+  renderFollowUp(sid, tid);
+  if (on) document.querySelector(`#ful-${tid} .fu-text`)?.focus();
+  save();
+}
+
+function addAction(sid, tid) {
+  const s=findS(sid), t=findT(s,tid); if(!t) return;
+  if (!t.actions) t.actions = [];
+  t.actions.push({id:uid(), text:'', owner:'', due:'', status:'Open'});
+  renderFollowUp(sid, tid);
+  const rows = document.querySelectorAll(`#ful-${tid} .fu-text`);
+  rows[rows.length-1]?.focus();
+  save();
+}
+
+function updAction(sid, tid, i, f, v) {
+  const s=findS(sid), t=findT(s,tid); if(!t||!t.actions||!t.actions[i]) return;
+  t.actions[i][f] = v;
+  // Keystroke edits stay local; status and date changes push (they call save via render path).
+  if (f === 'text' || f === 'owner') saveLocal(); else save();
+}
+
+function delAction(sid, tid, i) {
+  const s=findS(sid), t=findT(s,tid); if(!t||!t.actions) return;
+  const a = t.actions[i];
+  if ((a.text||a.owner||a.due) && !confirm('Delete this follow-up? This cannot be undone.')) return;
+  t.actions.splice(i,1);
+  renderFollowUp(sid, tid);
+  save();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1558,6 +1703,7 @@ function updDur(el, tid) {
 function updType(sid,tid,v) {
   const s=findS(sid), t=findT(s,tid); if(!t) return;
   const wasDecision = t.type === 'Decision';
+  const wasFollowUp = canFollowUp(t);
   t.type = v;
   const row = document.querySelector(`[data-tid="${tid}"]`);
   if (row) {
@@ -1568,8 +1714,9 @@ function updType(sid,tid,v) {
   // Auto-open detail panel when type is set to Decision
   if (v === 'Decision' && !open.has(tid)) {
     toggleD(tid);
-  } else if (open.has(tid) && (v==='Decision') !== wasDecision) {
-    // Refresh detail panel content when Decision-ness changes while already open
+  } else if (open.has(tid) && ((v==='Decision') !== wasDecision || canFollowUp(t) !== wasFollowUp)) {
+    // Refresh the panel when Decision-ness OR follow-up eligibility changes
+    // while it is already open (e.g. Discussion → Break hides the follow-up line).
     const detailTd = document.querySelector(`#dr-${tid} td`);
     if (detailTd) detailTd.innerHTML = detailHtml(t, sid);
   }
@@ -1654,7 +1801,8 @@ function addTopic(sid) {
   const s=findS(sid); if(!s) return;
   const t={id:uid(),title:'',owner:'',pres:'',type:'',t0:'',t1:'',prs:[],purpose:'',disc:'',mins:'',
     decisionBasis:'',recommendation:'',decisionOutcome:'',decisionStatus:'Pending',
-    decisionComment:'',nextSteps:'',responsible:'',decisionFinalized:false};
+    decisionComment:'',nextSteps:'',responsible:'',decisionFinalized:false,
+    followUp:false,actions:[]};
   s.topics.push(t);
   const tb=document.getElementById('tb-'+sid);
   if(tb){ tb.insertAdjacentHTML('beforeend', rowHtml(t,sid)); }
