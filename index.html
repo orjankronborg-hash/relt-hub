@@ -184,6 +184,30 @@ select.ii { cursor: pointer; }
 .sc-support.active  { background: #11734b; color: #fff; }
 .sc-eval.active     { background: #c62828; color: #fff; }
 .sc-deferred.active { background: #7b43a1; color: #fff; }
+
+/* ── Follow-up line ─────────────────────────────────────────── */
+.fu-panel { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #ccc; }
+.fu-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #777; letter-spacing: .6px; }
+.fu-toggle:hover { color: var(--green); }
+.fu-toggle input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--green); margin: 0; }
+.fu-count { font-weight: 700; font-size: 11px; color: #8a6100; background: #fff8e6; border: 1px solid #f0e0b0; border-radius: 9px; padding: 1px 8px; letter-spacing: 0; text-transform: none; }
+.fu-count.fu-zero { color: #777; background: #f1f1f1; border-color: #ddd; }
+.fu-body { margin-top: 10px; }
+.fu-head { display: grid; grid-template-columns: 1fr 160px 140px 110px 28px; gap: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #999; letter-spacing: .6px; margin-bottom: 4px; }
+.fu-row { display: grid; grid-template-columns: 1fr 160px 140px 110px 28px; gap: 6px; align-items: center; margin-bottom: 5px; }
+.fu-row input, .fu-row select { border: 1px solid #ddd; border-radius: 4px; padding: 5px 7px; font-size: 13px; font-family: inherit; background: white; width: 100%; }
+.fu-row input:focus, .fu-row select:focus { outline: none; border-color: var(--green); }
+.fu-row.fu-closed input, .fu-row.fu-closed select { opacity: .55; }
+.fu-row.fu-closed .fu-text { text-decoration: line-through; }
+.fu-overdue { border-color: #c62828 !important; background: #fff5f5 !important; }
+.fu-st-Open    { background: #f0f0f0; color: #333; font-weight: 700; }
+.fu-st-Done    { background: #d4edbc; color: #11734b; font-weight: 700; }
+.fu-st-Dropped { background: #e8e8e8; color: #777; font-weight: 700; }
+.fu-hint { font-size: 11px; color: #999; margin-top: 2px; }
+@media (max-width: 900px) {
+  .fu-head { display: none; }
+  .fu-row { grid-template-columns: 1fr 1fr; gap: 5px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+}
 .finalize-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0; }
 .finalized-badge { background: #11734b; color: white; border-radius: 10px; font-size: 11px; font-weight: 700; padding: 3px 10px; }
 .decision-outcome-ea { min-height: 60px; }
@@ -222,6 +246,39 @@ main.hidden { display: none; }
 .dl-card-footer { padding: 8px 16px; background: #fafafa; border-top: 1px solid #ebebeb; display: flex; align-items: center; gap: 8px; }
 .legacy-tag { font-size: 12px; color: #aaa; font-style: italic; margin-right: auto; }
 .agenda-link { font-size: 13px; color: #1155cc; text-decoration: underline; cursor: pointer; margin-right: auto; }
+
+/* FOLLOW-UP LOG — deliberately lighter than the decision log: a flat list
+   of rows rather than cards, since a follow-up is one line, not a dossier. */
+#followup-view { display: none; }
+.ful-group { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #999; letter-spacing: .7px; margin: 18px 0 7px; display: flex; align-items: center; gap: 8px; }
+.ful-group:first-child { margin-top: 0; }
+.ful-group::after { content: ''; flex: 1; height: 1px; background: #e4e4e4; }
+.ful-group.g-overdue { color: #c62828; }
+.ful-row { display: flex; align-items: flex-start; gap: 11px; background: white; border-radius: 7px; margin-bottom: 7px; padding: 11px 15px; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-left: 4px solid #bbb; }
+.ful-row.r-overdue { border-left-color: #c62828; }
+.ful-row.r-open    { border-left-color: #11734b; }
+.ful-row.r-done    { border-left-color: #ccc; opacity: .62; }
+.ful-row.r-dropped { border-left-color: #ccc; opacity: .5; }
+.ful-check { width: 17px; height: 17px; margin-top: 1px; cursor: pointer; accent-color: #11734b; flex-shrink: 0; }
+.ful-main { flex: 1; min-width: 0; }
+.ful-text { font-size: 15px; font-weight: 600; color: #222; line-height: 1.35; }
+.ful-row.r-done .ful-text, .ful-row.r-dropped .ful-text { text-decoration: line-through; font-weight: 500; }
+.ful-text.ful-blank { color: #ccc; font-style: italic; font-weight: 500; }
+.ful-meta { font-size: 12.5px; color: #777; margin-top: 3px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.ful-owner { font-weight: 700; color: #555; }
+.ful-due { white-space: nowrap; }
+.ful-due.d-overdue { color: #c62828; font-weight: 700; }
+.ful-due.ful-nodue { color: #bbb; }
+.ful-lbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: #aaa; margin-right: 5px; }
+.ful-due.d-overdue .ful-lbl { color: #d98080; }
+.ful-sep { color: #ddd; }
+.ful-src { color: #1155cc; text-decoration: underline; cursor: pointer; }
+.ful-src:hover { color: #7B2020; }
+.ful-st { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 9px; white-space: nowrap; flex-shrink: 0; }
+.ful-st.s-Open { background: #f0f0f0; color: #444; }
+.ful-st.s-Done { background: #d4edbc; color: #11734b; }
+.ful-st.s-Dropped { background: #e8e8e8; color: #888; }
+@media (max-width: 700px) { .ful-row { padding: 10px 12px; } .ful-meta { font-size: 12px; } }
 
 /* NOTIFICATION MODAL */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500; align-items: center; justify-content: center; }
@@ -388,6 +445,12 @@ main.hidden { display: none; }
 .nav-item.active { background: rgba(255,255,255,0.15); border-left-color: white; color: white; }
 .nav-badge { font-size: 14px; background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.9); border-radius: 8px; padding: 2px 8px; font-weight: 700; margin-left: auto; }
 .nav-item.active .nav-badge { background: rgba(255,255,255,0.3); color: white; }
+/* Secondary nav entry — present but deliberately quieter than its sibling,
+   for views that support a primary one rather than standing beside it. */
+.nav-item.nav-sub { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.6); padding-top: 7px; padding-bottom: 7px; padding-left: 34px; }
+.nav-item.nav-sub:hover { color: rgba(255,255,255,0.85); }
+.nav-item.nav-sub.active { color: white; font-weight: 600; }
+.nav-item.nav-sub .nav-badge { font-size: 11px; padding: 1px 7px; background: rgba(255,255,255,0.15); }
 .nav-external .external-icon { font-size: 14px; opacity: 0.7; margin-left: auto; }
 .sidebar-footer { padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.15); }
 .sidebar-footer .save-status { font-size: 15px; color: rgba(255,255,255,0.6); }
@@ -652,6 +715,7 @@ async function doGoogleSignIn() {
       <div class="nav-group">
         <div class="nav-group-title">PLANNING</div>
         <a class="nav-item active" data-tab="agenda" onclick="showTab('agenda')">Meeting Agenda</a>
+        <a class="nav-item nav-sub" data-tab="followups" onclick="showTab('followups')">Follow-ups <span class="nav-badge" id="fu-nav-badge" style="display:none"></span></a>
         <a class="nav-item" data-tab="decisions" onclick="showTab('decisions')">Decision Log</a>
         <a class="nav-item" data-tab="remeetup" onclick="showTab('remeetup')">RE Meetup</a>
         <a class="nav-item nav-external" href="https://drive.google.com/drive/folders/0ADa5VwkdwAwRUk9PVA" target="_blank" rel="noopener">RELT Drive Folder <span class="external-icon">&#8599;</span></a>
@@ -720,6 +784,21 @@ async function doGoogleSignIn() {
           </select>
         </div>
         <div id="dl-cards"></div>
+      </div>
+
+      <!-- Follow-ups View -->
+      <div id="followup-view">
+        <div class="dl-toolbar">
+          <h2>Follow-ups</h2>
+          <label for="ful-owner-filter" style="font-size:12px;color:#555">Responsible:</label>
+          <select id="ful-owner-filter" class="dl-filter" onchange="renderFollowUpLog()">
+            <option value="">Everyone</option>
+          </select>
+          <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="checkbox" id="ful-hide-done" onchange="renderFollowUpLog()"> Hide completed
+          </label>
+        </div>
+        <div id="ful-rows"></div>
       </div>
 
       <!-- Financial Documents View -->
@@ -1527,8 +1606,132 @@ function detailHtml(t, sid) {
       <div class="ea minutes-ea" contenteditable data-ce="mins" data-sid="${sid}" data-tid="${t.id}"
            data-ph="Meeting minutes and notes go here…">${t.mins||''}</div>
     </div>
+    ${followUpHtml(t,sid)}
     ${t.type==='Decision' ? decisionPanelHtml(t,sid) : ''}
   </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FOLLOW-UPS
+// ═══════════════════════════════════════════════════════════════
+// Types that can carry a follow-up. Decision topics are excluded — they
+// already have Next Steps / Responsible in the decision panel. Break and
+// Lunch are excluded because detailHtml renders for them too.
+const FOLLOWUP_TYPES = ['', 'Orientation', 'Discussion', 'Workshop'];
+const ACTION_STATUSES = ['Open', 'Done', 'Dropped'];
+
+function canFollowUp(t) { return FOLLOWUP_TYPES.includes(t.type || ''); }
+
+function openActionCount(t) {
+  return (t.actions || []).filter(a => (a.status || 'Open') === 'Open').length;
+}
+
+// Empty due dates are never overdue and always sort last.
+function isOverdue(a) {
+  if (!a.due || (a.status || 'Open') !== 'Open') return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return new Date(a.due + 'T00:00:00') < today;
+}
+
+function actionRowHtml(a, i, sid, tid) {
+  const st = a.status || 'Open';
+  const closed = st !== 'Open';
+  return `
+    <div class="fu-row${closed ? ' fu-closed' : ''}" id="fur-${tid}-${i}">
+      <input class="fu-text" type="text" value="${esc(a.text||'')}" placeholder="What needs to happen…"
+             oninput="updAction('${sid}','${tid}',${i},'text',this.value)">
+      <input type="text" list="owner-list" value="${esc(a.owner||'')}" placeholder="Responsible…"
+             oninput="updAction('${sid}','${tid}',${i},'owner',this.value)">
+      <input class="${isOverdue(a) ? 'fu-overdue' : ''}" type="date" value="${esc(a.due||'')}"
+             onchange="updAction('${sid}','${tid}',${i},'due',this.value);renderFollowUp('${sid}','${tid}')">
+      <select class="fu-st-${st}" onchange="updAction('${sid}','${tid}',${i},'status',this.value);renderFollowUp('${sid}','${tid}')">
+        ${ACTION_STATUSES.map(s=>`<option value="${s}"${s===st?' selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn btn-sm btn-danger" onclick="delAction('${sid}','${tid}',${i})" title="Delete follow-up">✕</button>
+    </div>`;
+}
+
+function followUpHtml(t, sid) {
+  if (!canFollowUp(t)) return '';
+  const on = !!t.followUp;
+  const acts = t.actions || [];
+  const nOpen = openActionCount(t);
+
+  const body = !on ? '' : `
+    <div class="fu-body">
+      <div class="fu-head">
+        <span>Description</span><span>Responsible</span><span>Timeline</span><span>Status</span><span></span>
+      </div>
+      <div id="ful-${t.id}">${acts.map((a,i)=>actionRowHtml(a,i,sid,t.id)).join('')}</div>
+      <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="addAction('${sid}','${t.id}')">+ Add follow-up</button>
+        <span class="fu-hint">Leave the timeline empty if there is no deadline.</span>
+      </div>
+    </div>`;
+
+  return `
+  <div class="fu-panel" id="fup-${t.id}">
+    <label class="fu-toggle">
+      <input type="checkbox"${on?' checked':''} onchange="toggleFollowUp('${sid}','${t.id}',this.checked)">
+      Follow-up required
+      ${on ? `<span class="fu-count${nOpen?'':' fu-zero'}">${nOpen} open</span>` : ''}
+    </label>
+    ${body}
+  </div>`;
+}
+
+// Re-render just this topic's follow-up panel, preserving focus where possible.
+function renderFollowUp(sid, tid) {
+  const s=findS(sid), t=findT(s,tid); if(!t) return;
+  const panel = document.getElementById('fup-'+tid);
+  if (panel) panel.outerHTML = followUpHtml(t, sid);
+}
+
+function toggleFollowUp(sid, tid, on) {
+  const s=findS(sid), t=findT(s,tid); if(!t) return;
+  if (!on && (t.actions||[]).some(a => (a.text||a.owner||a.due))) {
+    if (!confirm('Hide the follow-up section? The rows are kept and will reappear if you tick the box again.')) {
+      renderFollowUp(sid, tid);
+      return;
+    }
+  }
+  t.followUp = on;
+  // Ticking the box with no rows yet starts you off with one.
+  if (on && !(t.actions||[]).length) {
+    t.actions = [{id:uid(), text:'', owner:'', due:'', status:'Open'}];
+  }
+  renderFollowUp(sid, tid);
+  if (on) document.querySelector(`#ful-${tid} .fu-text`)?.focus();
+  save();
+  updateFollowUpBadge();
+}
+
+function addAction(sid, tid) {
+  const s=findS(sid), t=findT(s,tid); if(!t) return;
+  if (!t.actions) t.actions = [];
+  t.actions.push({id:uid(), text:'', owner:'', due:'', status:'Open'});
+  renderFollowUp(sid, tid);
+  const rows = document.querySelectorAll(`#ful-${tid} .fu-text`);
+  rows[rows.length-1]?.focus();
+  save();
+  updateFollowUpBadge();
+}
+
+function updAction(sid, tid, i, f, v) {
+  const s=findS(sid), t=findT(s,tid); if(!t||!t.actions||!t.actions[i]) return;
+  t.actions[i][f] = v;
+  // Keystroke edits stay local; status and date changes push (they call save via render path).
+  if (f === 'text' || f === 'owner') saveLocal(); else { save(); updateFollowUpBadge(); }
+}
+
+function delAction(sid, tid, i) {
+  const s=findS(sid), t=findT(s,tid); if(!t||!t.actions) return;
+  const a = t.actions[i];
+  if ((a.text||a.owner||a.due) && !confirm('Delete this follow-up? This cannot be undone.')) return;
+  t.actions.splice(i,1);
+  renderFollowUp(sid, tid);
+  save();
+  updateFollowUpBadge();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1557,6 +1760,7 @@ function updDur(el, tid) {
 function updType(sid,tid,v) {
   const s=findS(sid), t=findT(s,tid); if(!t) return;
   const wasDecision = t.type === 'Decision';
+  const wasFollowUp = canFollowUp(t);
   t.type = v;
   const row = document.querySelector(`[data-tid="${tid}"]`);
   if (row) {
@@ -1567,8 +1771,9 @@ function updType(sid,tid,v) {
   // Auto-open detail panel when type is set to Decision
   if (v === 'Decision' && !open.has(tid)) {
     toggleD(tid);
-  } else if (open.has(tid) && (v==='Decision') !== wasDecision) {
-    // Refresh detail panel content when Decision-ness changes while already open
+  } else if (open.has(tid) && ((v==='Decision') !== wasDecision || canFollowUp(t) !== wasFollowUp)) {
+    // Refresh the panel when Decision-ness OR follow-up eligibility changes
+    // while it is already open (e.g. Discussion → Break hides the follow-up line).
     const detailTd = document.querySelector(`#dr-${tid} td`);
     if (detailTd) detailTd.innerHTML = detailHtml(t, sid);
   }
@@ -1653,7 +1858,8 @@ function addTopic(sid) {
   const s=findS(sid); if(!s) return;
   const t={id:uid(),title:'',owner:'',pres:'',type:'',t0:'',t1:'',prs:[],purpose:'',disc:'',mins:'',
     decisionBasis:'',recommendation:'',decisionOutcome:'',decisionStatus:'Pending',
-    decisionComment:'',nextSteps:'',responsible:'',decisionFinalized:false};
+    decisionComment:'',nextSteps:'',responsible:'',decisionFinalized:false,
+    followUp:false,actions:[]};
   s.topics.push(t);
   const tb=document.getElementById('tb-'+sid);
   if(tb){ tb.insertAdjacentHTML('beforeend', rowHtml(t,sid)); }
@@ -1910,13 +2116,14 @@ function showTab(tab) {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
   // Update breadcrumb
-  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', remeetup: 'RE Meetup', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Team Principles', sti: 'STI Targets'};
+  const names = {agenda: 'Meeting Agenda', decisions: 'Decision Log', followups: 'Follow-ups', remeetup: 'RE Meetup', bizreview: 'Business Reviews', financial: 'Financial Documents', charter: 'Team Principles', sti: 'STI Targets'};
   const bc = document.getElementById('breadcrumb-view');
   if (bc) bc.textContent = names[tab] || tab;
   // Toggle views
   document.getElementById('main').style.display = tab === 'agenda' ? '' : 'none';
   document.getElementById('agenda-toolbar').style.display = tab === 'agenda' ? '' : 'none';
   document.getElementById('decision-log-view').style.display = tab === 'decisions' ? 'block' : 'none';
+  document.getElementById('followup-view').style.display = tab === 'followups' ? 'block' : 'none';
   document.getElementById('bizreview-view').style.display = tab === 'bizreview' ? 'block' : 'none';
   document.getElementById('financial-view').style.display = tab === 'financial' ? 'block' : 'none';
   document.getElementById('remeetup-view').style.display = tab === 'remeetup' ? 'block' : 'none';
@@ -1927,6 +2134,7 @@ function showTab(tab) {
   if (searchWrap) searchWrap.style.display = (tab === 'sti' || tab === 'charter') ? 'none' : '';
   // Render active view
   if (tab === 'decisions') renderDecisionLog();
+  if (tab === 'followups') renderFollowUpLog();
   if (tab === 'remeetup') renderREMeetup();
   if (tab === 'bizreview') renderBizReviews();
   if (tab === 'financial') renderFinancials();
@@ -2044,6 +2252,128 @@ function renderDecisionLog() {
   container.innerHTML = count
     ? html
     : `<div class="dl-empty">No decisions match the selected filters.</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FOLLOW-UP LOG
+// ═══════════════════════════════════════════════════════════════
+
+// Flatten every follow-up across every session into one list, each item
+// carrying enough context to render and to link back to its topic.
+function allFollowUps() {
+  const out = [];
+  S.sessions.forEach(s => {
+    (s.topics || []).forEach(t => {
+      if (!canFollowUp(t)) return;
+      (t.actions || []).forEach((a, i) => {
+        out.push({...a, status: a.status || 'Open',
+                  sid: s.id, tid: t.id, idx: i,
+                  topicTitle: t.title || '(untitled topic)', sessionDate: s.date});
+      });
+    });
+  });
+  return out;
+}
+
+function fmtDue(due) {
+  if (!due) return '';
+  const d = new Date(due + 'T00:00:00');
+  if (isNaN(d)) return due;
+  return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+}
+
+function fulRowHtml(a) {
+  const overdue = isOverdue(a);
+  const cls = a.status !== 'Open' ? 'r-' + a.status.toLowerCase() : (overdue ? 'r-overdue' : 'r-open');
+  const dueTxt = a.due
+    ? `<span class="ful-due${overdue ? ' d-overdue' : ''}"><span class="ful-lbl">Deadline</span>${fmtDue(a.due)}${overdue ? ' · overdue' : ''}</span>`
+    : `<span class="ful-due ful-nodue"><span class="ful-lbl">Deadline</span>none set</span>`;
+  const text = a.text
+    ? `<div class="ful-text">${esc(a.text)}</div>`
+    : `<div class="ful-text ful-blank">(no description yet)</div>`;
+
+  return `
+    <div class="ful-row ${cls}">
+      <input class="ful-check" type="checkbox"${a.status === 'Done' ? ' checked' : ''}
+             title="${a.status === 'Done' ? 'Reopen' : 'Mark done'}"
+             onchange="toggleFollowUpDone('${a.sid}','${a.tid}',${a.idx},this.checked)">
+      <div class="ful-main">
+        ${text}
+        <div class="ful-meta">
+          ${a.owner ? `<span class="ful-owner">${esc(a.owner)}</span><span class="ful-sep">·</span>` : ''}
+          ${dueTxt}
+          <span class="ful-sep">·</span>
+          <span class="ful-src" title="Go to this topic in the agenda"
+                onclick="goToAgendaTopic('${a.sid}','${a.tid}')">${esc(a.topicTitle)} ↗</span>
+          <span class="ful-sep">·</span>
+          <span>${esc(a.sessionDate || '')}</span>
+        </div>
+      </div>
+      <span class="ful-st s-${a.status}">${a.status}</span>
+    </div>`;
+}
+
+function renderFollowUpLog() {
+  const container = document.getElementById('ful-rows');
+  if (!container) return;
+  const ownerFilter = document.getElementById('ful-owner-filter')?.value || '';
+  const hideDone = document.getElementById('ful-hide-done')?.checked;
+
+  let items = allFollowUps();
+  buildFollowUpOwnerFilter(items, ownerFilter);
+  if (ownerFilter) items = items.filter(a => (a.owner || '') === ownerFilter);
+
+  // Open first — overdue at the very top, then by date, undated last.
+  // Completed and dropped items stay, but sink to the bottom.
+  const rank = a => a.status === 'Open' ? (isOverdue(a) ? 0 : 1) : (a.status === 'Done' ? 2 : 3);
+  const byDue = (x, y) => (x.due || '9999-99-99').localeCompare(y.due || '9999-99-99');
+  items.sort((x, y) => rank(x) - rank(y) || byDue(x, y));
+
+  const GROUPS = [
+    [0, 'Overdue',   'g-overdue'],
+    [1, 'Open',      ''],
+    [2, 'Completed', ''],
+    [3, 'Dropped',   ''],
+  ];
+
+  let html = '';
+  GROUPS.forEach(([r, label, cls]) => {
+    if (hideDone && r >= 2) return;
+    const group = items.filter(a => rank(a) === r);
+    if (!group.length) return;
+    html += `<div class="ful-group ${cls}">${label} · ${group.length}</div>`;
+    html += group.map(fulRowHtml).join('');
+  });
+
+  container.innerHTML = html || `<div class="dl-empty">No follow-ups yet. Tick “Follow-up required” on an agenda topic to add one.</div>`;
+  updateFollowUpBadge();
+}
+
+// Keep the Responsible dropdown in step with who actually has follow-ups.
+function buildFollowUpOwnerFilter(items, current) {
+  const sel = document.getElementById('ful-owner-filter');
+  if (!sel) return;
+  const owners = [...new Set(items.map(a => a.owner).filter(Boolean))].sort();
+  sel.innerHTML = `<option value="">Everyone</option>` +
+    owners.map(o => `<option value="${esc(o)}"${o === current ? ' selected' : ''}>${esc(o)}</option>`).join('');
+}
+
+function toggleFollowUpDone(sid, tid, idx, done) {
+  const s = findS(sid), t = findT(s, tid);
+  if (!t || !t.actions || !t.actions[idx]) return;
+  t.actions[idx].status = done ? 'Done' : 'Open';
+  save();
+  renderFollowUpLog();
+  // Keep the agenda panel in step if it happens to be open underneath.
+  renderFollowUp(sid, tid);
+}
+
+function updateFollowUpBadge() {
+  const badge = document.getElementById('fu-nav-badge');
+  if (!badge) return;
+  const n = allFollowUps().filter(a => a.status === 'Open').length;
+  badge.textContent = n;
+  badge.style.display = n ? '' : 'none';
 }
 
 function goToAgendaTopic(sid, tid) {
@@ -2773,7 +3103,9 @@ S.sessions.forEach(s => s.topics && s.topics.forEach(t => {
 render();
 
 // Hide non-agenda views on init
+updateFollowUpBadge();
 document.getElementById('decision-log-view').style.display = 'none';
+document.getElementById('followup-view').style.display = 'none';
 document.getElementById('bizreview-view').style.display = 'none';
 document.getElementById('financial-view').style.display = 'none';
 document.getElementById('remeetup-view').style.display = 'none';
@@ -2992,6 +3324,7 @@ async function initFirebase() {
       showTab(currentTab);
     }
 
+    updateFollowUpBadge();
     _fbReady = true;
     setSyncStatus('☁ Connected ✓', 'synced');
     if (!S.reMeetups || !S.reMeetups.length) seedREMeetups();
