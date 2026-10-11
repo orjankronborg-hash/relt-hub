@@ -219,6 +219,9 @@ select.ii { cursor: pointer; }
 .fu-st-Done    { background: #d4edbc; color: #11734b; font-weight: 700; }
 .fu-st-Dropped { background: #e8e8e8; color: #777; font-weight: 700; }
 .fu-hint { font-size: 11px; color: #999; margin-top: 2px; }
+/* Spans the row's grid so the note sits under the fields it refers to. */
+.fu-draft { grid-column: 1 / -1; font-size: 11px; color: #8a6100; margin: -2px 0 4px 1px; }
+.fu-draft-row input, .fu-draft-row select { border-style: dashed; }
 @media (max-width: 900px) {
   .fu-head { display: none; }
   .fu-row { grid-template-columns: 1fr 1fr; gap: 5px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
@@ -1756,8 +1759,24 @@ const ACTION_STATUSES = ['Open', 'Done', 'Dropped'];
 
 function canFollowUp(t) { return FOLLOWUP_TYPES.includes(t.type || ''); }
 
+// A follow-up starts being tracked — counted on the topic, listed in the
+// Follow-ups tab — once it says what needs to happen and who owns it. Until
+// then it is a draft note on the topic you are typing it into. Ticking the
+// box used to be enough, which filled the log with blank rows nobody owned.
+function isTracked(a) {
+  return !!((a.text || '').trim() && (a.owner || '').trim());
+}
+
+// Empty when the row is complete; otherwise names exactly what is missing.
+function draftMessage(a) {
+  const missing = [];
+  if (!(a.text  || '').trim()) missing.push('a description');
+  if (!(a.owner || '').trim()) missing.push('a responsible');
+  return missing.length ? `Draft — add ${missing.join(' and ')} to track this` : '';
+}
+
 function openActionCount(t) {
-  return (t.actions || []).filter(a => (a.status || 'Open') === 'Open').length;
+  return (t.actions || []).filter(a => isTracked(a) && (a.status || 'Open') === 'Open').length;
 }
 
 // Empty due dates are never overdue and always sort last.
@@ -1770,8 +1789,9 @@ function isOverdue(a) {
 function actionRowHtml(a, i, sid, tid) {
   const st = a.status || 'Open';
   const closed = st !== 'Open';
+  const draft = draftMessage(a);
   return `
-    <div class="fu-row${closed ? ' fu-closed' : ''}" id="fur-${tid}-${i}">
+    <div class="fu-row${closed ? ' fu-closed' : ''}${draft ? ' fu-draft-row' : ''}" id="fur-${tid}-${i}">
       <input class="fu-text" type="text" value="${esc(a.text||'')}" placeholder="What needs to happen…"
              oninput="updAction('${sid}','${tid}',${i},'text',this.value)">
       <input type="text" list="owner-list" value="${esc(a.owner||'')}" placeholder="Responsible…"
@@ -1782,6 +1802,7 @@ function actionRowHtml(a, i, sid, tid) {
         ${ACTION_STATUSES.map(s=>`<option value="${s}"${s===st?' selected':''}>${s}</option>`).join('')}
       </select>
       <button class="btn btn-sm btn-danger" onclick="delAction('${sid}','${tid}',${i})" title="Delete follow-up">✕</button>
+      ${draft ? `<span class="fu-draft">${esc(draft)}</span>` : ''}
     </div>`;
 }
 
@@ -1855,7 +1876,35 @@ function updAction(sid, tid, i, f, v) {
   const s=findS(sid), t=findT(s,tid); if(!t||!t.actions||!t.actions[i]) return;
   t.actions[i][f] = v;
   // Keystroke edits stay local; status and date changes push (they call save via render path).
-  if (f === 'text' || f === 'owner') saveLocal(); else { save(); updateFollowUpBadge(); }
+  // Typing a description or an owner can flip the row from draft to tracked, so
+  // the row and both counters are patched in place — re-rendering the panel here
+  // would pull the field out from under the cursor.
+  if (f === 'text' || f === 'owner') { saveLocal(); syncActionDraft(sid, tid, i); }
+  else { save(); updateFollowUpBadge(); }
+}
+
+function syncActionDraft(sid, tid, i) {
+  const s = findS(sid), t = findT(s, tid);
+  if (!t || !t.actions || !t.actions[i]) return;
+  const a = t.actions[i];
+
+  const row = document.getElementById(`fur-${tid}-${i}`);
+  if (row) {
+    const msg = draftMessage(a);
+    row.classList.toggle('fu-draft-row', !!msg);
+    const hint = row.querySelector('.fu-draft');
+    if (!msg) { if (hint) hint.remove(); }
+    else if (hint) hint.textContent = msg;
+    else row.insertAdjacentHTML('beforeend', `<span class="fu-draft">${esc(msg)}</span>`);
+  }
+
+  const count = document.querySelector(`#fup-${tid} .fu-count`);
+  if (count) {
+    const n = openActionCount(t);
+    count.textContent = `${n} open`;
+    count.classList.toggle('fu-zero', !n);
+  }
+  updateFollowUpBadge();
 }
 
 function delAction(sid, tid, i) {
@@ -2403,6 +2452,9 @@ function allFollowUps() {
     (s.topics || []).forEach(t => {
       if (!canFollowUp(t)) return;
       (t.actions || []).forEach((a, i) => {
+        // i stays the real index into t.actions, so skipping drafts here does
+        // not misalign the delete and status controls the log renders.
+        if (!isTracked(a)) return;
         out.push({...a, status: a.status || 'Open',
                   sid: s.id, tid: t.id, idx: i,
                   topicTitle: t.title || '(untitled topic)', sessionDate: s.date});
@@ -2502,7 +2554,7 @@ function renderFollowUpLog() {
     html += group.map(fulRowHtml).join('');
   });
 
-  container.innerHTML = html || `<div class="dl-empty">No follow-ups yet. Tick “Follow-up required” on an agenda topic to add one.</div>`;
+  container.innerHTML = html || `<div class="dl-empty">No follow-ups yet. On an agenda topic, tick “Follow-up required” and give the row a description and a responsible — it appears here once it has both.</div>`;
   updateFollowUpBadge();
 }
 
