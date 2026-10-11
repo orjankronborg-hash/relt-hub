@@ -102,6 +102,14 @@ select.ii { cursor: pointer; }
 .dur { color: #999; font-size: 11px; white-space: nowrap; }
 
 /* Expand */
+/* Minutes status dot. Only on topics in meetings that have already been held —
+   a dot on next week's agenda would flag a gap that cannot exist yet. */
+.t-title-cell { display: flex; align-items: center; gap: 8px; }
+.t-title-cell .ii { flex: 1; min-width: 0; width: auto; }
+.mins-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; cursor: default; }
+.mins-dot.md-ok { background: #11734b; }
+/* The halo is what you scan for; green stays quiet so red carries the signal. */
+.mins-dot.md-missing { background: #c62828; box-shadow: 0 0 0 3px rgba(198,40,40,.15); }
 .xbtn { background: #f8eeee; border: 1px solid #d4a4a4; cursor: pointer; color: #7B2020; font-size: 16px; line-height: 1; padding: 2px 5px; border-radius: 4px; transition: transform .15s, background .12s; display: block; margin: 0 auto; position: relative; z-index: 2; }
 .xbtn:hover { background: #edd8d8; border-color: #7B2020; color: #4A1212; }
 .xbtn.open { transform: rotate(180deg); background: #7B2020; color: white; border-color: #4A1212; }
@@ -1588,6 +1596,59 @@ function renderSession(s) {
   return el;
 }
 
+// ── Minutes status dot ────────────────────────────────────────────
+// Breaks and Lunches are not discussed, so there is nothing to minute.
+const NO_MINUTES_TYPES = ['Break', 'Lunch'];
+function needsMinutes(t) { return !NO_MINUTES_TYPES.includes(t.type || ''); }
+
+// Minutes are rich text, so a box you clicked into and left behind still holds
+// markup — <br>, &nbsp;, an empty <div>. t.mins.trim() calls that "written".
+// Strip to visible text before deciding.
+function minsText(html) {
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return (tmp.textContent || '').replace(/\u00a0/g, ' ').trim();
+}
+function hasMinutes(t) { return minsText(t && t.mins).length > 0; }
+
+// Strictly before today: minutes for a meeting held this morning are not late.
+// Shares parseSessionDate's year-blindness — fix both together.
+function sessionHasHappened(s) {
+  if (!s) return false;
+  const k = parseSessionDate(s.date);
+  if (k === Infinity) return false;
+  const now = new Date();
+  return k < now.getMonth() * 100 + now.getDate();
+}
+
+// null when the topic should carry no dot at all.
+function minsDotState(t, s) {
+  if (!t || !needsMinutes(t) || !sessionHasHappened(s)) return null;
+  return hasMinutes(t)
+    ? {cls: 'md-ok',      title: 'Minutes recorded'}
+    : {cls: 'md-missing', title: 'No minutes recorded'};
+}
+
+function minsDotHtml(t, sid) {
+  const st = minsDotState(t, findS(sid));
+  return st ? `<span class="mins-dot ${st.cls}" title="${st.title}"></span>` : '';
+}
+
+// Repaint without re-rendering the row: the row survives untouched while you
+// type minutes, and updType patches it in place rather than rebuilding it.
+function syncMinsDot(sid, tid) {
+  const cell = document.querySelector(`.topic-row[data-tid="${tid}"] .t-title-cell`);
+  if (!cell) return;
+  const s = findS(sid), t = findT(s, tid);
+  const st = minsDotState(t, s);
+  const dot = cell.querySelector('.mins-dot');
+  if (!st) { if (dot) dot.remove(); return; }
+  if (!dot) { cell.insertAdjacentHTML('afterbegin', minsDotHtml(t, sid)); return; }
+  dot.className = 'mins-dot ' + st.cls;
+  dot.title = st.title;
+}
+
 function rowHtml(t, sid) {
   const isBreak = t.type==='Break', isLunch = t.type==='Lunch';
   const rc = isBreak ? 'break-row' : isLunch ? 'lunch-row' : '';
@@ -1603,8 +1664,8 @@ function rowHtml(t, sid) {
   return `
   <tr class="topic-row ${rc}" data-tid="${t.id}" data-sid="${sid}">
     <td><button class="xbtn${open.has(t.id)?' open':''}" onclick="toggleD('${t.id}')" title="Details / Minutes">▾</button></td>
-    <td><input class="ii ii-bold" type="text" value="${esc(t.title)}" placeholder="Topic title…"
-         oninput="updT('${sid}','${t.id}','title',this.value)"></td>
+    <td><div class="t-title-cell">${minsDotHtml(t, sid)}<input class="ii ii-bold" type="text" value="${esc(t.title)}" placeholder="Topic title…"
+         oninput="updT('${sid}','${t.id}','title',this.value)"></div></td>
     <td><input class="ii" type="text" list="owner-list" value="${esc(t.owner)}" placeholder="Owner…"
          oninput="updT('${sid}','${t.id}','owner',this.value)"></td>
     <td><input class="ii" type="text" value="${esc(t.pres)}" placeholder="Presenter(s)…"
@@ -1841,6 +1902,7 @@ function updType(sid,tid,v) {
     const sel = row.querySelector('select.type-sel');
     if (sel) sel.className = 'ii type-sel' + (v ? ' tp-'+v : '');
   }
+  syncMinsDot(sid, tid);   // Break and Lunch carry no dot; switching away restores it
   // Auto-open detail panel when type is set to Decision
   if (v === 'Decision' && !open.has(tid)) {
     toggleD(tid);
@@ -1985,7 +2047,8 @@ function toggleSessionMins(sid) {
     panel.style.display = 'block';
     return;
   }
-  const topicsWithMins = s.topics.filter(t => t.mins && t.mins.trim());
+  // Same emptiness test as the status dot, so the panel and the dots agree.
+  const topicsWithMins = s.topics.filter(hasMinutes);
   if (!topicsWithMins.length) {
     panel.innerHTML = `<h4>Session Minutes <button class="panel-close" onclick="this.closest('.session-mins-panel').style.display='none'" title="Close">✕</button></h4><div class="smins-empty">No minutes recorded for this session yet.</div>`;
     panel.style.display = 'block';
@@ -2069,6 +2132,7 @@ document.addEventListener('input', e => {
         const idx = DL_FIELD_ORDER.indexOf(ce);
         if (idx >= 0 && dlEls[idx] && document.activeElement !== dlEls[idx]) dlEls[idx].innerText = val;
       }
+      if (ce === 'mins') syncMinsDot(sid, tid);
       saveLocal();
     }
   } else if (sid) {
