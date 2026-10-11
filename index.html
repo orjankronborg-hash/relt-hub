@@ -285,6 +285,11 @@ main.hidden { display: none; }
 .ful-st.s-Open { background: #f0f0f0; color: #444; }
 .ful-st.s-Done { background: #d4edbc; color: #11734b; }
 .ful-st.s-Dropped { background: #e8e8e8; color: #888; }
+/* Faint until the row is hovered, so tidying up is one click without the
+   log turning into a wall of delete buttons. */
+.ful-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 13px; line-height: 1; padding: 3px 5px; border-radius: 5px; flex-shrink: 0; opacity: .3; transition: opacity .12s, color .12s, background .12s; }
+.ful-row:hover .ful-del { opacity: 1; }
+.ful-del:hover { color: #c62828; background: #fdeaea; }
 @media (max-width: 700px) { .ful-row { padding: 10px 12px; } .ful-meta { font-size: 12px; } }
 
 /* NOTIFICATION MODAL */
@@ -2377,7 +2382,27 @@ function fulRowHtml(a) {
         </div>
       </div>
       <span class="ful-st s-${a.status}">${a.status}</span>
+      <button class="ful-del" title="Delete this follow-up"
+              onclick="delFollowUpFromLog('${a.sid}','${a.tid}',${a.idx})">&#10005;</button>
     </div>`;
+}
+
+// Delete straight from the log. Mirrors delAction, but re-renders the log
+// rather than the topic panel, which is normally not on screen from here.
+// Indices shift after a splice, so the whole log is re-rendered rather than
+// the single row patched out.
+function delFollowUpFromLog(sid, tid, idx) {
+  const s = findS(sid), t = findT(s, tid);
+  if (!t || !t.actions || !t.actions[idx]) return;
+  const a = t.actions[idx];
+  if ((a.text || a.owner || a.due) &&
+      !confirm('Delete this follow-up?\n\n' + (a.text || '(no description)') +
+               '\n\nThis cannot be undone.')) return;
+  t.actions.splice(idx, 1);
+  save();
+  renderFollowUpLog();
+  updateFollowUpBadge();
+  renderFollowUp(sid, tid);   // keep the agenda panel in step if it happens to be open
 }
 
 function renderFollowUpLog() {
